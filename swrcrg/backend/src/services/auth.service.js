@@ -1,10 +1,11 @@
 'use strict';
 
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const { createUser, findUserByEmail } = require('../models/user.model');
+const { JWT_SECRET, JWT_EXPIRES_IN } = require('../config/env');
 
 const register = async ({ name, email, password }) => {
-  // Verificar si el email ya está en uso
   const existing = await findUserByEmail(email);
   if (existing) {
     const err = new Error('El email ya está registrado');
@@ -17,4 +18,31 @@ const register = async ({ name, email, password }) => {
   return user;
 };
 
-module.exports = { register };
+const login = async ({ email, password }) => {
+  const user = await findUserByEmail(email);
+  if (!user) {
+    const err = new Error('Credenciales inválidas');
+    err.status = 401;
+    throw err;
+  }
+
+  const valid = await bcrypt.compare(password, user.password);
+  if (!valid) {
+    const err = new Error('Credenciales inválidas');
+    err.status = 401;
+    throw err;
+  }
+
+  const token = jwt.sign(
+    { id: user.id, role: user.role },
+    JWT_SECRET,
+    { expiresIn: JWT_EXPIRES_IN }
+  );
+
+  return {
+    token,
+    user: { id: user.id, name: user.name, email: user.email, role: user.role },
+  };
+};
+
+module.exports = { register, login };

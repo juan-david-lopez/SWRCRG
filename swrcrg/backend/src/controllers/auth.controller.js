@@ -1,11 +1,10 @@
 'use strict';
 
-const { register } = require('../services/auth.service');
+const { register, login } = require('../services/auth.service');
 
 const registerUser = async (req, res) => {
   const { name, email, password } = req.body;
 
-  // Validaciones básicas
   if (!name || !email || !password) {
     return res.status(400).json({ error: 'name, email y password son obligatorios' });
   }
@@ -27,4 +26,19 @@ const registerUser = async (req, res) => {
   }
 };
 
-module.exports = { registerUser };
+const loginUser = async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ error: 'email y password son obligatorios' });
+  }
+
+  try {
+    const result = await login({ email, password });
+    return res.status(200).json(result);
+  } catch (err) {
+    return res.status(err.status || 500).json({ error: err.message });
+  }
+};
+
+module.exports = { registerUser, loginUser };

@@ -6,6 +6,7 @@ const cors = require('cors');
 const healthRoutes = require('./routes/health.routes');
 const dbRoutes    = require('./routes/db.routes');
 const authRoutes  = require('./routes/auth.routes');
+const reportRoutes = require('./routes/report.routes');
 
 const app = express();
 
@@ -17,6 +18,7 @@ app.use(express.json());
 app.use('/api/health', healthRoutes);
 app.use('/api/db-check', dbRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/reports', reportRoutes);
 
 // Ruta no encontrada
 app.use((req, res) => {
