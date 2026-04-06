@@ -1,16 +1,41 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Home         from '../pages/Home';
-import LoginPage    from '../pages/LoginPage';
-import RegisterPage from '../pages/RegisterPage';
-import NotFound     from '../pages/NotFound';
+import MainLayout        from '../layouts/MainLayout';
+import Home              from '../pages/Home';
+import LoginPage         from '../pages/LoginPage';
+import RegisterPage      from '../pages/RegisterPage';
+import AccessDenied      from '../pages/AccessDenied';
+import NotFound          from '../pages/NotFound';
+import CreateReportPage  from '../pages/reports/CreateReportPage';
+import ReportsListPage   from '../pages/reports/ReportsListPage';
+import AdminReportsPage  from '../pages/admin/AdminReportsPage';
+import ProtectedRoute    from './ProtectedRoute';
+import AdminRoute        from './AdminRoute';
 
 const AppRouter = () => (
   <BrowserRouter>
     <Routes>
-      <Route path="/"         element={<Home />} />
+      {/* Sin layout: auth */}
       <Route path="/login"    element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
-      <Route path="*"         element={<NotFound />} />
+
+      {/* Con layout */}
+      <Route element={<MainLayout />}>
+        <Route path="/"       element={<Home />} />
+        <Route path="/reports" element={<ReportsListPage />} />
+        <Route path="/acceso-denegado" element={<AccessDenied />} />
+
+        {/* Privadas: cualquier usuario autenticado */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/reports/create" element={<CreateReportPage />} />
+        </Route>
+
+        {/* Privadas: solo admin */}
+        <Route element={<AdminRoute />}>
+          <Route path="/admin/reports" element={<AdminReportsPage />} />
+        </Route>
+
+        <Route path="*" element={<NotFound />} />
+      </Route>
     </Routes>
   </BrowserRouter>
 );

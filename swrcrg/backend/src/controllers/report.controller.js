@@ -5,8 +5,9 @@ const { create, getAll, getById, updateStatus } = require('../services/report.se
 const VALID_STATUSES = ['pendiente', 'en_proceso', 'resuelto'];
 
 const createReport = async (req, res) => {
-  const { title, description, latitude, longitude, image_url = null } = req.body;
-  const user_id = req.user.id;
+  const { title, description, latitude, longitude } = req.body;
+  const user_id   = req.user.id;
+  const image_url = req.file ? `/uploads/${req.file.filename}` : null;
 
   if (!title || !description || latitude === undefined || longitude === undefined) {
     return res.status(400).json({ error: 'title, description, latitude y longitude son obligatorios' });
@@ -20,7 +21,7 @@ const createReport = async (req, res) => {
     const report = await create({
       title,
       description,
-      latitude: Number(latitude),
+      latitude:  Number(latitude),
       longitude: Number(longitude),
       image_url,
       user_id,

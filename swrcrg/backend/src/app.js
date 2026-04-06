@@ -1,11 +1,12 @@
 'use strict';
 
 const express = require('express');
-const cors = require('cors');
+const cors    = require('cors');
+const path    = require('path');
 
 const healthRoutes = require('./routes/health.routes');
-const dbRoutes    = require('./routes/db.routes');
-const authRoutes  = require('./routes/auth.routes');
+const dbRoutes     = require('./routes/db.routes');
+const authRoutes   = require('./routes/auth.routes');
 const reportRoutes = require('./routes/report.routes');
 
 const app = express();
@@ -14,10 +15,13 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Archivos estáticos
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
+
 // Rutas
-app.use('/api/health', healthRoutes);
+app.use('/api/health',  healthRoutes);
 app.use('/api/db-check', dbRoutes);
-app.use('/api/auth', authRoutes);
+app.use('/api/auth',    authRoutes);
 app.use('/api/reports', reportRoutes);
 
 // Ruta no encontrada
