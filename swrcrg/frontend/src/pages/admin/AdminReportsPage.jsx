@@ -1,14 +1,9 @@
 import { useEffect, useState } from 'react';
 import { getReports, updateReportStatus } from '../../services/report.service';
+import { REPORT_STATUSES, STATUS_COLORS } from '../../constants/reportStatus';
 
-const STATUSES   = ['pendiente', 'en_proceso', 'resuelto'];
-const API_BASE   = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3000';
-
-const STATUS_COLORS = {
-  pendiente:  { background: '#fef9c3', color: '#854d0e' },
-  en_proceso: { background: '#dbeafe', color: '#1e40af' },
-  resuelto:   { background: '#dcfce7', color: '#166534' },
-};
+const STATUSES = REPORT_STATUSES;
+const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3000';
 
 const formatDate = (iso) =>
   new Date(iso).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });

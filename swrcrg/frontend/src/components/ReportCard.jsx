@@ -1,8 +1,4 @@
-const STATUS_COLORS = {
-  pendiente:  { background: '#fef9c3', color: '#854d0e' },
-  en_proceso: { background: '#dbeafe', color: '#1e40af' },
-  resuelto:   { background: '#dcfce7', color: '#166534' },
-};
+import { STATUS_COLORS } from '../constants/reportStatus';
 
 const formatDate = (iso) =>
   new Date(iso).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });

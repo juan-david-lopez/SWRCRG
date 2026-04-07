@@ -2,43 +2,62 @@
 
 const pool = require('../config/db');
 
-/**
- * Inserta un nuevo usuario y devuelve los datos básicos (sin password).
- */
-const createUser = async ({ name, email, password, role = 'citizen' }) => {
+const createUser = async ({ nombre, apellido, correo, contrasena, telefono, rol_id }) => {
   const sql = `
-    INSERT INTO users (name, email, password, role)
-    VALUES ($1, $2, $3, $4)
-    RETURNING id, name, email, role, created_at
+    INSERT INTO users (nombre, apellido, correo, contrasena, telefono, rol_id)
+    VALUES ($1, $2, $3, $4, $5, $6)
+    RETURNING id, nombre, apellido, correo, telefono, rol_id, activo, fecha_creacion
   `;
-  const { rows } = await pool.query(sql, [name, email, password, role]);
+  const { rows } = await pool.query(sql, [nombre, apellido, correo, contrasena, telefono, rol_id]);
   return rows[0];
 };
 
-/**
- * Busca un usuario por email. Incluye password para uso en autenticación.
- */
-const findUserByEmail = async (email) => {
+const findUserByEmail = async (correo) => {
   const sql = `
-    SELECT id, name, email, password, role, created_at
-    FROM users
-    WHERE email = $1
+    SELECT u.id, u.nombre, u.apellido, u.correo, u.contrasena, u.telefono,
+           u.rol_id, u.activo, u.fecha_creacion,
+           r.nombre AS rol_nombre
+    FROM users u
+    JOIN roles r ON r.id = u.rol_id
+    WHERE u.correo = $1
   `;
-  const { rows } = await pool.query(sql, [email]);
+  const { rows } = await pool.query(sql, [correo]);
   return rows[0] || null;
 };
 
-/**
- * Busca un usuario por id. No expone el password.
- */
 const findUserById = async (id) => {
   const sql = `
-    SELECT id, name, email, role, created_at
-    FROM users
-    WHERE id = $1
+    SELECT u.id, u.nombre, u.apellido, u.correo, u.telefono,
+           u.rol_id, u.activo, u.fecha_creacion,
+           r.nombre AS rol_nombre
+    FROM users u
+    JOIN roles r ON r.id = u.rol_id
+    WHERE u.id = $1
   `;
   const { rows } = await pool.query(sql, [id]);
   return rows[0] || null;
 };
 
-module.exports = { createUser, findUserByEmail, findUserById };
+const getAllUsers = async () => {
+  const sql = `
+    SELECT u.id, u.nombre, u.apellido, u.correo, u.telefono,
+           u.rol_id, u.activo, u.fecha_creacion,
+           r.nombre AS rol_nombre
+    FROM users u
+    JOIN roles r ON r.id = u.rol_id
+    ORDER BY u.fecha_creacion DESC
+  `;
+  const { rows } = await pool.query(sql);
+  return rows;
+};
+
+const updateUserStatus = async (id, activo) => {
+  const sql = `
+    UPDATE users SET activo = $1 WHERE id = $2
+    RETURNING id, nombre, apellido, correo, telefono, rol_id, activo, fecha_creacion
+  `;
+  const { rows } = await pool.query(sql, [activo, id]);
+  return rows[0] || null;
+};
+
+module.exports = { createUser, findUserByEmail, findUserById, getAllUsers, updateUserStatus };

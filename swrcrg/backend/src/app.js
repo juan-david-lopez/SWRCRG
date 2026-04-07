@@ -8,6 +8,7 @@ const healthRoutes = require('./routes/health.routes');
 const dbRoutes     = require('./routes/db.routes');
 const authRoutes   = require('./routes/auth.routes');
 const reportRoutes = require('./routes/report.routes');
+const roleRoutes   = require('./routes/role.routes');
 
 const app = express();
 
@@ -18,11 +19,11 @@ app.use(express.json());
 // Archivos estáticos
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
-// Rutas
-app.use('/api/health',  healthRoutes);
+app.use('/api/health',   healthRoutes);
 app.use('/api/db-check', dbRoutes);
-app.use('/api/auth',    authRoutes);
-app.use('/api/reports', reportRoutes);
+app.use('/api/auth',     authRoutes);
+app.use('/api/reports',  reportRoutes);
+app.use('/api/roles',    roleRoutes);
 
 // Ruta no encontrada
 app.use((req, res) => {
