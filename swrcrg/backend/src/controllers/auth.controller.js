@@ -3,7 +3,7 @@
 const { register, login } = require('../services/auth.service');
 
 const registerUser = async (req, res) => {
-  const { nombre, apellido, correo, contrasena, telefono } = req.body;
+  const { nombre, apellido, correo, contrasena, telefono, rol } = req.body;
 
   if (!nombre || !apellido || !correo || !contrasena) {
     return res.status(400).json({ error: 'nombre, apellido, correo y contrasena son obligatorios' });
@@ -18,8 +18,11 @@ const registerUser = async (req, res) => {
     return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' });
   }
 
+  // req.user existe solo si el middleware de auth se ejecutó (ruta protegida)
+  const callerRol = req.user?.rol;
+
   try {
-    const user = await register({ nombre, apellido, correo, contrasena, telefono });
+    const user = await register({ nombre, apellido, correo, contrasena, telefono, rol }, callerRol);
     return res.status(201).json({ user });
   } catch (err) {
     return res.status(err.status || 500).json({ error: err.message });

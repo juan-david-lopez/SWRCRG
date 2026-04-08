@@ -6,7 +6,11 @@ const { createUser, findUserByEmail } = require('../models/user.model');
 const { findRoleByName }              = require('../models/role.model');
 const { JWT_SECRET, JWT_EXPIRES_IN }  = require('../config/env');
 
-const register = async ({ nombre, apellido, correo, contrasena, telefono }) => {
+/**
+ * @param {object} data - Datos del nuevo usuario
+ * @param {string} [callerRol] - Rol del usuario que hace la petición (undefined = público)
+ */
+const register = async ({ nombre, apellido, correo, contrasena, telefono, rol: rolSolicitado }, callerRol) => {
   const existing = await findUserByEmail(correo);
   if (existing) {
     const err = new Error('El correo ya está registrado');
@@ -14,9 +18,21 @@ const register = async ({ nombre, apellido, correo, contrasena, telefono }) => {
     throw err;
   }
 
-  const rol = await findRoleByName('ciudadano');
+  // Si se solicita crear un administrador, solo otro administrador puede hacerlo
+  if (rolSolicitado === 'administrador') {
+    if (callerRol !== 'administrador') {
+      const err = new Error('Solo un administrador puede crear otro administrador');
+      err.status = 403;
+      throw err;
+    }
+  }
+
+  // El rol asignado: si el caller es admin y especificó rol, se respeta; si no, ciudadano
+  const rolNombre = (callerRol === 'administrador' && rolSolicitado) ? rolSolicitado : 'ciudadano';
+
+  const rol = await findRoleByName(rolNombre);
   if (!rol) {
-    const err = new Error('Rol ciudadano no encontrado');
+    const err = new Error(`Rol '${rolNombre}' no encontrado`);
     err.status = 500;
     throw err;
   }
