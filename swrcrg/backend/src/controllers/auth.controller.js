@@ -1,24 +1,16 @@
 'use strict';
 
-const { register, login } = require('../services/auth.service');
+const { validationResult } = require('express-validator');
+const { register, login }  = require('../services/auth.service');
 
 const registerUser = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    // Devuelve solo el primer mensaje para que el frontend lo muestre limpio
+    return res.status(400).json({ error: errors.array()[0].msg });
+  }
+
   const { nombre, apellido, correo, contrasena, telefono, rol } = req.body;
-
-  if (!nombre || !apellido || !correo || !contrasena) {
-    return res.status(400).json({ error: 'nombre, apellido, correo y contrasena son obligatorios' });
-  }
-
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(correo)) {
-    return res.status(400).json({ error: 'Formato de correo inválido' });
-  }
-
-  if (contrasena.length < 6) {
-    return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' });
-  }
-
-  // req.user existe solo si el middleware de auth se ejecutó (ruta protegida)
   const callerRol = req.user?.rol;
 
   try {

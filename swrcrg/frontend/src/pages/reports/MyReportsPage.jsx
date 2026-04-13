@@ -1,28 +1,27 @@
 import { useEffect, useState } from 'react';
 import ReportCard from '../../components/ReportCard';
-import { getReports } from '../../services/report.service';
+import { getMyReports } from '../../services/report.service';
 
-const ReportsListPage = () => {
+const MyReportsPage = () => {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState('');
 
   useEffect(() => {
-    getReports()
+    getMyReports()
       .then(({ reportes }) => setReports(reportes))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <p style={styles.center}>Cargando reportes...</p>;
+  if (loading) return <p style={styles.center}>Cargando tus reportes...</p>;
   if (error)   return <p style={{ ...styles.center, color: '#dc2626' }}>{error}</p>;
 
   return (
     <div style={styles.wrapper}>
-      <h2>Reportes ciudadanos</h2>
-
+      <h2>Mis reportes</h2>
       {reports.length === 0 ? (
-        <p style={styles.empty}>No hay reportes registrados aún.</p>
+        <p style={styles.empty}>Aún no has creado ningún reporte.</p>
       ) : (
         <div style={styles.grid}>
           {reports.map((r) => <ReportCard key={r.id} report={r} />)}
@@ -39,4 +38,4 @@ const styles = {
   empty:   { color: '#888', textAlign: 'center', marginTop: '40px' },
 };
 
-export default ReportsListPage;
+export default MyReportsPage;

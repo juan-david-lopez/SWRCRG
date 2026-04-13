@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import NotificacionBell from './NotificacionBell';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -16,7 +17,8 @@ const Navbar = () => {
         <NavLink to="/" style={navStyle}>Inicio</NavLink>
         <NavLink to="/reports" style={navStyle}>Reportes</NavLink>
         {user && <NavLink to="/reports/create" style={navStyle}>Crear reporte</NavLink>}
-        {user?.role === 'admin' && (
+        {user && <NavLink to="/mis-reportes" style={navStyle}>Mis reportes</NavLink>}
+        {user?.rol === 'administrador' && (
           <NavLink to="/admin/reports" style={navStyle}>Panel admin</NavLink>
         )}
       </div>
@@ -24,7 +26,8 @@ const Navbar = () => {
       <div style={styles.right}>
         {user ? (
           <>
-            <span style={styles.username}>{user.name}</span>
+            <NotificacionBell />
+            <span style={styles.username}>{user.nombre} {user.apellido}</span>
             <button onClick={handleLogout} style={styles.btn}>Cerrar sesión</button>
           </>
         ) : (

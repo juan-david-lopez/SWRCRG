@@ -10,6 +10,7 @@ const authRoutes         = require('./routes/auth.routes');
 const reporteRoutes      = require('./routes/reporte.routes');
 const roleRoutes         = require('./routes/role.routes');
 const notificacionRoutes = require('./routes/notificacion.routes');
+const categoriaRoutes    = require('./routes/categoria.routes');
 
 const app = express();
 
@@ -23,6 +24,7 @@ app.use('/api/auth',           authRoutes);
 app.use('/api/reportes',       reporteRoutes);
 app.use('/api/roles',          roleRoutes);
 app.use('/api/notificaciones', notificacionRoutes);
+app.use('/api/categorias',     categoriaRoutes);
 
 app.use((req, res) => res.status(404).json({ error: 'Ruta no encontrada' }));
 

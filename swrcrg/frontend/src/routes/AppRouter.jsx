@@ -7,6 +7,8 @@ import AccessDenied      from '../pages/AccessDenied';
 import NotFound          from '../pages/NotFound';
 import CreateReportPage  from '../pages/reports/CreateReportPage';
 import ReportsListPage   from '../pages/reports/ReportsListPage';
+import ReportDetailPage  from '../pages/reports/ReportDetailPage';
+import MyReportsPage     from '../pages/reports/MyReportsPage';
 import AdminReportsPage  from '../pages/admin/AdminReportsPage';
 import ProtectedRoute    from './ProtectedRoute';
 import AdminRoute        from './AdminRoute';
@@ -20,13 +22,15 @@ const AppRouter = () => (
 
       {/* Con layout */}
       <Route element={<MainLayout />}>
-        <Route path="/"       element={<Home />} />
+        <Route path="/"        element={<Home />} />
         <Route path="/reports" element={<ReportsListPage />} />
+        <Route path="/reports/:id" element={<ReportDetailPage />} />
         <Route path="/acceso-denegado" element={<AccessDenied />} />
 
         {/* Privadas: cualquier usuario autenticado */}
         <Route element={<ProtectedRoute />}>
           <Route path="/reports/create" element={<CreateReportPage />} />
+          <Route path="/mis-reportes"   element={<MyReportsPage />} />
         </Route>
 
         {/* Privadas: solo admin */}

@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 const LoginPage = () => {
   const navigate = useNavigate();
   const { saveSession } = useAuth();
-  const [form, setForm]       = useState({ email: '', password: '' });
+  const [form, setForm]       = useState({ correo: '', contrasena: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState('');
 
@@ -17,11 +17,10 @@ const LoginPage = () => {
     e.preventDefault();
     setError('');
     setLoading(true);
-
     try {
       const { token, user } = await login(form);
       saveSession(token, user);
-      navigate('/');
+      navigate(user.rol === 'administrador' ? '/admin/reports' : '/');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -34,8 +33,8 @@ const LoginPage = () => {
       <form onSubmit={handleSubmit} style={styles.card}>
         <h2>Iniciar sesión</h2>
 
-        <FormInput label="Email"      type="email"    name="email"    value={form.email}    onChange={handleChange} placeholder="tu@email.com" />
-        <FormInput label="Contraseña" type="password" name="password" value={form.password} onChange={handleChange} placeholder="••••••" />
+        <FormInput label="Correo"      type="email"    name="correo"     value={form.correo}     onChange={handleChange} placeholder="tu@correo.com" />
+        <FormInput label="Contraseña"  type="password" name="contrasena" value={form.contrasena} onChange={handleChange} placeholder="••••••" />
 
         {error && <p style={styles.error}>{error}</p>}
 

@@ -21,7 +21,8 @@ const request = async (endpoint, options = {}) => {
   return data;
 };
 
-export const get  = (endpoint)         => request(endpoint);
-export const post = (endpoint, body)   => request(endpoint, { method: 'POST', body: JSON.stringify(body) });
-export const put  = (endpoint, body)   => request(endpoint, { method: 'PUT',  body: JSON.stringify(body) });
-export const del  = (endpoint)         => request(endpoint, { method: 'DELETE' });
+export const get   = (endpoint)        => request(endpoint);
+export const post  = (endpoint, body)  => request(endpoint, { method: 'POST',  body: JSON.stringify(body) });
+export const put   = (endpoint, body)  => request(endpoint, { method: 'PUT',   body: JSON.stringify(body) });
+export const patch = (endpoint, body)  => request(endpoint, { method: 'PATCH', body: JSON.stringify(body) });
+export const del   = (endpoint)        => request(endpoint, { method: 'DELETE' });
