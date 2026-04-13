@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import FormInput from '../components/FormInput';
+import { User, Mail, Lock, Phone, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { register } from '../services/auth.service';
+import Navbar from '../components/Navbar';
 
 const INITIAL = { nombre: '', apellido: '', correo: '', contrasena: '', confirmar: '', telefono: '' };
 
@@ -9,25 +10,19 @@ const validate = ({ nombre, apellido, correo, contrasena, confirmar }) => {
   if (!nombre.trim())   return 'El nombre es obligatorio';
   if (nombre.trim().length < 2) return 'El nombre debe tener al menos 2 caracteres';
   if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(nombre)) return 'El nombre solo puede contener letras';
-
   if (!apellido.trim()) return 'El apellido es obligatorio';
   if (apellido.trim().length < 2) return 'El apellido debe tener al menos 2 caracteres';
   if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(apellido)) return 'El apellido solo puede contener letras';
-
   if (!correo.trim())   return 'El correo es obligatorio';
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) return 'Formato de correo inválido';
-
   if (!contrasena)      return 'La contraseña es obligatoria';
   if (contrasena.length < 6) return 'La contraseña debe tener al menos 6 caracteres';
   if (!/[A-Z]/.test(contrasena)) return 'La contraseña debe tener al menos una mayúscula';
   if (!/[0-9]/.test(contrasena)) return 'La contraseña debe tener al menos un número';
-
   if (contrasena !== confirmar) return 'Las contraseñas no coinciden';
-
   return null;
 };
 
-// Fuerza de contraseña: 0-4
 const passwordStrength = (pwd) => {
   let score = 0;
   if (pwd.length >= 6)          score++;
@@ -41,22 +36,41 @@ const passwordStrength = (pwd) => {
 const STRENGTH_LABEL = ['', 'Débil', 'Regular', 'Buena', 'Fuerte', 'Muy fuerte'];
 const STRENGTH_COLOR = ['', '#ef4444', '#f97316', '#eab308', '#22c55e', '#16a34a'];
 
+/* ── Input con icono ── */
+const IconInput = ({ icon: Icon, name, type = 'text', value, placeholder, onChange, onBlur, error, hint, right }) => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+    <div style={{ ...s.inputWrap, borderColor: error ? '#ef4444' : '#d1d5db' }}>
+      <Icon size={16} strokeWidth={1.8} color={error ? '#ef4444' : '#9ca3af'} style={{ flexShrink: 0 }} />
+      <input
+        name={name} type={type} value={value}
+        placeholder={placeholder}
+        onChange={onChange} onBlur={onBlur}
+        style={s.input}
+        autoComplete={type === 'password' ? 'new-password' : 'off'}
+      />
+      {right}
+    </div>
+    {hint && !error && <span style={s.hint}>{hint}</span>}
+    {error && <span style={s.fieldErr}>{error}</span>}
+  </div>
+);
+
 const RegisterPage = () => {
   const navigate = useNavigate();
-  const [form, setForm]       = useState(INITIAL);
-  const [touched, setTouched] = useState({});
-  const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState('');
-  const [success, setSuccess] = useState('');
+  const [form, setForm]         = useState(INITIAL);
+  const [touched, setTouched]   = useState({});
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState('');
+  const [success, setSuccess]   = useState('');
+  const [showPwd, setShowPwd]   = useState(false);
+  const [showConf, setShowConf] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
     setError('');
   };
-
   const handleBlur = (e) => setTouched({ ...touched, [e.target.name]: true });
 
-  // Errores por campo para mostrar inline
   const fieldError = (field) => {
     if (!touched[field]) return '';
     const val = form[field];
@@ -82,7 +96,7 @@ const RegisterPage = () => {
         if (!/[0-9]/.test(val)) return 'Falta un número';
         break;
       case 'confirmar':
-        if (val !== form.contrasena) return 'No coincide';
+        if (val !== form.contrasena) return 'Las contraseñas no coinciden';
         break;
       case 'telefono':
         if (val && !/^[0-9+\-\s()]{7,20}$/.test(val)) return 'Formato inválido';
@@ -96,7 +110,6 @@ const RegisterPage = () => {
     setTouched({ nombre: true, apellido: true, correo: true, contrasena: true, confirmar: true, telefono: true });
     const err = validate(form);
     if (err) return setError(err);
-
     setError('');
     setSuccess('');
     setLoading(true);
@@ -116,87 +129,101 @@ const RegisterPage = () => {
   const strength = passwordStrength(form.contrasena);
 
   return (
-    <div style={styles.wrapper}>
-      <form onSubmit={handleSubmit} style={styles.card} noValidate>
-        <h2>Crear cuenta</h2>
+    <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", minHeight: '100vh', background: '#f1f5f9', display: 'flex', flexDirection: 'column' }}>
+      <Navbar />
+      <div style={s.page}>
+        <form onSubmit={handleSubmit} style={s.card} noValidate>
+          <Link to="/" style={s.backLink}>
+            <ArrowLeft size={15} strokeWidth={2} />
+            Volver al inicio
+          </Link>
 
-        <Field label="Nombre *"     name="nombre"    form={form} fieldError={fieldError} handleChange={handleChange} handleBlur={handleBlur} placeholder="Tu nombre" />
-        <Field label="Apellido *"   name="apellido"  form={form} fieldError={fieldError} handleChange={handleChange} handleBlur={handleBlur} placeholder="Tu apellido" />
-        <Field label="Correo *"     name="correo"    form={form} fieldError={fieldError} handleChange={handleChange} handleBlur={handleBlur} placeholder="tu@correo.com" type="email" />
+          <h2 style={s.title}>Crear cuenta</h2>
 
-        {/* Contraseña con indicador de fuerza */}
+        <IconInput icon={User}  name="nombre"   value={form.nombre}   placeholder="Nombre"   onChange={handleChange} onBlur={handleBlur} error={fieldError('nombre')} />
+        <IconInput icon={User}  name="apellido" value={form.apellido} placeholder="Apellido" onChange={handleChange} onBlur={handleBlur} error={fieldError('apellido')} />
+        <IconInput icon={Mail}  name="correo"   value={form.correo}   placeholder="Correo"   onChange={handleChange} onBlur={handleBlur} error={fieldError('correo')} type="email" />
+
+        {/* Contraseña */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          <label htmlFor="contrasena" style={styles.label}>Contraseña *</label>
-          <input
-            id="contrasena" name="contrasena" type="password"
-            value={form.contrasena} onChange={handleChange} onBlur={handleBlur}
-            placeholder="Mínimo 6 caracteres, 1 mayúscula y 1 número"
-            style={{ ...styles.input, borderColor: fieldError('contrasena') ? '#ef4444' : '#ccc' }}
-          />
+          <div style={{ ...s.inputWrap, borderColor: fieldError('contrasena') ? '#ef4444' : '#d1d5db' }}>
+            <Lock size={16} strokeWidth={1.8} color={fieldError('contrasena') ? '#ef4444' : '#9ca3af'} style={{ flexShrink: 0 }} />
+            <input
+              name="contrasena" type={showPwd ? 'text' : 'password'}
+              value={form.contrasena} placeholder="Contraseña"
+              onChange={handleChange} onBlur={handleBlur}
+              style={s.input} autoComplete="new-password"
+            />
+            <button type="button" onClick={() => setShowPwd(!showPwd)} style={s.eyeBtn} tabIndex={-1}>
+              {showPwd ? <EyeOff size={16} color="#9ca3af" /> : <Eye size={16} color="#9ca3af" />}
+            </button>
+          </div>
+          <span style={s.hint}>Mínimo 6 caracteres, 1 mayúscula y 1 número</span>
           {form.contrasena && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ flex: 1, height: '4px', background: '#e5e7eb', borderRadius: '2px' }}>
-                <div style={{ width: `${(strength / 5) * 100}%`, height: '100%', background: STRENGTH_COLOR[strength], borderRadius: '2px', transition: 'width 0.3s' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <span style={{ fontSize: '11px', fontWeight: '600', color: STRENGTH_COLOR[strength], textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                {STRENGTH_LABEL[strength]}
+              </span>
+              <div style={s.strengthTrack}>
+                <div style={{ ...s.strengthFill, width: `${(strength / 5) * 100}%`, background: STRENGTH_COLOR[strength] }} />
               </div>
-              <span style={{ fontSize: '11px', color: STRENGTH_COLOR[strength] }}>{STRENGTH_LABEL[strength]}</span>
             </div>
           )}
-          {fieldError('contrasena') && <span style={styles.fieldErr}>{fieldError('contrasena')}</span>}
+          {fieldError('contrasena') && <span style={s.fieldErr}>{fieldError('contrasena')}</span>}
         </div>
 
         {/* Confirmar contraseña */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          <label htmlFor="confirmar" style={styles.label}>Confirmar contraseña *</label>
-          <input
-            id="confirmar" name="confirmar" type="password"
-            value={form.confirmar} onChange={handleChange} onBlur={handleBlur}
-            placeholder="Repite tu contraseña"
-            style={{ ...styles.input, borderColor: fieldError('confirmar') ? '#ef4444' : '#ccc' }}
-          />
-          {fieldError('confirmar') && <span style={styles.fieldErr}>{fieldError('confirmar')}</span>}
+          <div style={{ ...s.inputWrap, borderColor: fieldError('confirmar') ? '#ef4444' : '#d1d5db' }}>
+            <Lock size={16} strokeWidth={1.8} color={fieldError('confirmar') ? '#ef4444' : '#9ca3af'} style={{ flexShrink: 0 }} />
+            <input
+              name="confirmar" type={showConf ? 'text' : 'password'}
+              value={form.confirmar} placeholder="Confirmar contraseña"
+              onChange={handleChange} onBlur={handleBlur}
+              style={s.input} autoComplete="new-password"
+            />
+            <button type="button" onClick={() => setShowConf(!showConf)} style={s.eyeBtn} tabIndex={-1}>
+              {showConf ? <EyeOff size={16} color="#9ca3af" /> : <Eye size={16} color="#9ca3af" />}
+            </button>
+          </div>
+          {fieldError('confirmar') && <span style={s.fieldErr}>{fieldError('confirmar')}</span>}
         </div>
 
-        <Field label="Teléfono"    name="telefono"  form={form} fieldError={fieldError} handleChange={handleChange} handleBlur={handleBlur} placeholder="Opcional" />
+        <IconInput icon={Phone} name="telefono" value={form.telefono} placeholder="Teléfono" onChange={handleChange} onBlur={handleBlur} error={fieldError('telefono')} hint="Opcional" />
 
-        {error   && <p style={styles.error}>{error}</p>}
-        {success && <p style={styles.success}>{success}</p>}
+        {error   && <p style={s.errorBox}>{error}</p>}
+        {success && <p style={s.successBox}>{success}</p>}
 
-        <button type="submit" disabled={loading} style={styles.btn}>
+        <button type="submit" disabled={loading} style={{ ...s.btn, opacity: loading ? 0.7 : 1 }}>
           {loading ? 'Registrando...' : 'Registrarse'}
         </button>
 
-        <p style={styles.link}>
-          ¿Ya tienes cuenta? <Link to="/login">Inicia sesión</Link>
+        <p style={s.loginLink}>
+          ¿Ya tienes cuenta? <Link to="/login" style={s.loginAnchor}>Inicia sesión</Link>
         </p>
       </form>
+    </div>
     </div>
   );
 };
 
-// Componente auxiliar para campos simples
-const Field = ({ label, name, type = 'text', form, fieldError, handleChange, handleBlur, placeholder }) => (
-  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-    <label htmlFor={name} style={styles.label}>{label}</label>
-    <input
-      id={name} name={name} type={type}
-      value={form[name]} onChange={handleChange} onBlur={handleBlur}
-      placeholder={placeholder}
-      style={{ ...styles.input, borderColor: fieldError(name) ? '#ef4444' : '#ccc' }}
-    />
-    {fieldError(name) && <span style={styles.fieldErr}>{fieldError(name)}</span>}
-  </div>
-);
-
-const styles = {
-  wrapper:   { display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: '#f5f5f5', padding: '24px 16px' },
-  card:      { display: 'flex', flexDirection: 'column', gap: '14px', background: '#fff', padding: '32px', borderRadius: '8px', width: '100%', maxWidth: '420px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' },
-  label:     { fontSize: '13px', fontWeight: 500, color: '#374151' },
-  input:     { padding: '8px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '14px', outline: 'none' },
-  fieldErr:  { fontSize: '11px', color: '#ef4444' },
-  btn:       { padding: '10px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '15px' },
-  link:      { textAlign: 'center', fontSize: '13px', margin: 0 },
-  error:     { color: '#dc2626', fontSize: '13px', margin: 0, padding: '8px', background: '#fef2f2', borderRadius: '4px' },
-  success:   { color: '#16a34a', fontSize: '13px', margin: 0, padding: '8px', background: '#f0fdf4', borderRadius: '4px' },
+const s = {
+  page:        { display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1, padding: '32px 16px' },
+  card:        { display: 'flex', flexDirection: 'column', gap: '14px', background: '#fff', padding: '36px 32px', borderRadius: '16px', width: '100%', maxWidth: '420px', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' },
+  title:       { margin: '0 0 8px', fontSize: '24px', fontWeight: '700', color: '#0f172a' },
+  backLink:    { display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#64748b', textDecoration: 'none', fontWeight: '500', marginBottom: '4px' },
+  inputWrap:   { display: 'flex', alignItems: 'center', gap: '10px', border: '1px solid #d1d5db', borderRadius: '8px', padding: '10px 14px', background: '#fff', transition: 'border-color .15s' },
+  input:       { flex: 1, border: 'none', outline: 'none', fontSize: '14px', color: '#0f172a', background: 'transparent', fontFamily: 'inherit' },
+  eyeBtn:      { background: 'none', border: 'none', cursor: 'pointer', padding: '0', display: 'flex', alignItems: 'center' },
+  hint:        { fontSize: '12px', color: '#94a3b8', margin: 0 },
+  fieldErr:    { fontSize: '12px', color: '#ef4444', margin: 0 },
+  strengthTrack: { height: '4px', background: '#e2e8f0', borderRadius: '2px', overflow: 'hidden' },
+  strengthFill:  { height: '100%', borderRadius: '2px', transition: 'width .3s, background .3s' },
+  btn:         { padding: '13px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '15px', fontWeight: '600', fontFamily: 'inherit', marginTop: '4px' },
+  loginLink:   { textAlign: 'center', fontSize: '13px', margin: 0, color: '#64748b' },
+  loginAnchor: { color: '#2563eb', fontWeight: '600', textDecoration: 'none' },
+  errorBox:    { fontSize: '13px', color: '#dc2626', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '6px', padding: '10px 12px', margin: 0 },
+  successBox:  { fontSize: '13px', color: '#16a34a', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '6px', padding: '10px 12px', margin: 0 },
 };
 
 export default RegisterPage;

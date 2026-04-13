@@ -52,7 +52,7 @@ const MapPicker = ({ onSelect }) => {
 
       {marker ? (
         <p style={styles.coords}>
-          📍 {marker.lat.toFixed(6)}, {marker.lng.toFixed(6)}
+          {marker.lat.toFixed(6)}, {marker.lng.toFixed(6)}
         </p>
       ) : (
         <p style={styles.hint}>Haz clic en el mapa para seleccionar la ubicación</p>
