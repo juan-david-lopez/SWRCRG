@@ -250,20 +250,19 @@ const ReportDetailPage = () => {
           </form>
         )}
       </div>
-    </div>
 
-    {/* Lightbox */}
-    {reporte.imagenes?.length > 0 && (
-      <Lightbox
-        images={reporte.imagenes.map((img) => `${API_BASE}${img.url_imagen}`)}
-        index={lightboxIdx}
-        onClose={() => setLightboxIdx(null)}
-        onPrev={() => setLightboxIdx((i) => (i - 1 + reporte.imagenes.length) % reporte.imagenes.length)}
-        onNext={() => setLightboxIdx((i) => (i + 1) % reporte.imagenes.length)}
-      />
-    )}
-  );
-};
+      {/* Lightbox */}
+      {reporte.imagenes?.length > 0 && (
+        <Lightbox
+          images={reporte.imagenes.map((img) => `${API_BASE}${img.url_imagen}`)}
+          index={lightboxIdx}
+          onClose={() => setLightboxIdx(null)}
+          onPrev={() => setLightboxIdx((i) => (i - 1 + reporte.imagenes.length) % reporte.imagenes.length)}
+          onNext={() => setLightboxIdx((i) => (i + 1) % reporte.imagenes.length)}
+        />
+      )}
+    </div>
+  );};
 
 const st = {  wrapper:        { maxWidth: '720px', margin: '0 auto', padding: '32px 20px 80px', display: 'flex', flexDirection: 'column', gap: '24px', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" },
   back:           { display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#64748b', textDecoration: 'none', fontWeight: '500' },
