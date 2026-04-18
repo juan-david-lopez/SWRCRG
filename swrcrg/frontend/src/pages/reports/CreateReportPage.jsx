@@ -202,33 +202,33 @@ const CreateReportPage = () => {
 };
 
 const s = {
-  page:       { minHeight: '100vh', background: '#f1f5f9', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" },
+  page:       { minHeight: '100vh', background: 'var(--c-bg)', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" },
 
   /* top bar */
-  topBar:     { display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 24px', background: '#fff', borderBottom: '1px solid #e2e8f0' },
-  backBtn:    { background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '4px', color: '#0f172a' },
-  topTitle:   { fontSize: '17px', fontWeight: '700', color: '#0f172a' },
+  topBar:     { display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 24px', background: 'var(--c-surface)', borderBottom: '1px solid var(--c-border)' },
+  backBtn:    { background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '4px', color: 'var(--c-text)' },
+  topTitle:   { fontSize: '17px', fontWeight: '700', color: 'var(--c-text)' },
 
   /* card */
   center:     { display: 'flex', justifyContent: 'center', padding: '32px 16px 48px' },
-  card:       { display: 'flex', flexDirection: 'column', gap: '0', background: '#fff', borderRadius: '16px', width: '100%', maxWidth: '520px', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', overflow: 'hidden' },
+  card:       { display: 'flex', flexDirection: 'column', gap: '0', background: 'var(--c-surface)', borderRadius: '16px', width: '100%', maxWidth: '520px', boxShadow: '0 4px 24px var(--c-shadow)', overflow: 'hidden' },
 
   /* float field */
-  floatWrap:  { display: 'flex', flexDirection: 'column', borderBottom: '1px solid #e2e8f0', padding: '12px 20px 8px' },
+  floatWrap:  { display: 'flex', flexDirection: 'column', borderBottom: '1px solid var(--c-border)', padding: '12px 20px 8px' },
   floatLabel: { fontSize: '11px', fontWeight: '700', color: '#2563eb', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' },
-  input:      { border: 'none', outline: 'none', fontSize: '14px', color: '#0f172a', background: 'transparent', fontFamily: 'inherit', padding: '2px 0', width: '100%' },
-  hint:       { fontSize: '11px', color: '#94a3b8', marginTop: '4px' },
+  input:      { border: 'none', outline: 'none', fontSize: '14px', color: 'var(--c-text)', background: 'transparent', fontFamily: 'inherit', padding: '2px 0', width: '100%' },
+  hint:       { fontSize: '11px', color: 'var(--c-text-3)', marginTop: '4px' },
 
   /* mapa */
-  mapSection: { padding: '16px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '10px' },
-  mapLabel:   { fontSize: '11px', fontWeight: '700', color: '#0f172a', letterSpacing: '1px', margin: 0 },
+  mapSection: { padding: '16px 20px', borderBottom: '1px solid var(--c-border)', display: 'flex', flexDirection: 'column', gap: '10px' },
+  mapLabel:   { fontSize: '11px', fontWeight: '700', color: 'var(--c-text)', letterSpacing: '1px', margin: 0 },
   coordErr:   { display: 'flex', alignItems: 'center', fontSize: '12px', color: '#ef4444', fontWeight: '500' },
   nearbyWarn: { display: 'flex', alignItems: 'flex-start', gap: '10px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '12px' },
 
   /* imagen */
-  fileSection:{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '8px' },
-  fileBtn:    { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '11px', cursor: 'pointer', fontSize: '14px', fontWeight: '500', color: '#2563eb', background: '#fff' },
-  fileName:   { display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#64748b' },
+  fileSection:{ padding: '16px 20px', borderBottom: '1px solid var(--c-border)', display: 'flex', flexDirection: 'column', gap: '8px' },
+  fileBtn:    { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', border: '1px solid var(--c-border)', borderRadius: '8px', padding: '11px', cursor: 'pointer', fontSize: '14px', fontWeight: '500', color: '#2563eb', background: 'var(--c-surface)' },
+  fileName:   { display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--c-text-2)' },
   imgPreview: { position: 'relative', width: '72px', height: '72px', borderRadius: '8px', overflow: 'hidden', flexShrink: 0 },
   imgThumb:   { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
   imgRemove:  { position: 'absolute', top: '3px', right: '3px', width: '18px', height: '18px', borderRadius: '50%', background: 'rgba(0,0,0,0.55)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 },

@@ -7,6 +7,7 @@ import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import { Send, Trash2, ThumbsUp, Share2, Copy } from 'lucide-react';
 import { toast } from '../../components/Toast';
 import Lightbox from '../../components/Lightbox';
+import { TILE_URL, TILE_ATTR, createStatusIcon } from '../../components/MapMarkers';
 
 const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3000';
 
@@ -121,7 +122,7 @@ const ReportDetailPage = () => {
                 {STATUS_LABEL[estadoNombre] ?? estadoNombre}
               </span>
             )}
-            <button onClick={handleVote} style={{ ...st.actionBtn, color: reporte.voted ? '#2563eb' : '#94a3b8' }} title="Apoyar reporte">
+            <button onClick={handleVote} style={{ ...st.actionBtn, color: reporte.voted ? '#2563eb' : 'var(--c-text-3)' }} title="Apoyar reporte">
               <ThumbsUp size={15} strokeWidth={2} />
               <span>{reporte.votos ?? 0}</span>
             </button>
@@ -143,16 +144,16 @@ const ReportDetailPage = () => {
           )}
           <p style={st.meta}>
             👤 {reporte.usuario?.nombre} {reporte.usuario?.apellido}
-            {reporte.usuario?.correo && <span style={{ color: '#cbd5e1' }}> — {reporte.usuario.correo}</span>}
+            {reporte.usuario?.correo && <span style={{ color: 'var(--c-border)' }}> — {reporte.usuario.correo}</span>}
           </p>
           <p style={st.meta}>🗓 {formatDate(reporte.fecha_reporte)}</p>
         </div>
 
         {/* Mapa */}
-        <div style={{ borderRadius: '10px', overflow: 'hidden', height: '280px' }}>
-          <MapContainer center={center} zoom={15} style={{ height: '100%', width: '100%' }} scrollWheelZoom={false}>
-            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-            <Marker position={center} />
+        <div style={{ borderRadius: '12px', overflow: 'hidden', height: '280px', border: '1px solid var(--c-border)' }}>
+          <MapContainer center={center} zoom={16} style={{ height: '100%', width: '100%' }} scrollWheelZoom={false} zoomControl={true}>
+            <TileLayer url={TILE_URL} attribution={TILE_ATTR} />
+            <Marker position={center} icon={createStatusIcon(estadoNombre, 18)} />
           </MapContainer>
         </div>
 
@@ -265,45 +266,45 @@ const ReportDetailPage = () => {
   );};
 
 const st = {  wrapper:        { maxWidth: '720px', margin: '0 auto', padding: '32px 20px 80px', display: 'flex', flexDirection: 'column', gap: '24px', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" },
-  back:           { display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#64748b', textDecoration: 'none', fontWeight: '500' },
-  card:           { background: '#fff', borderRadius: '12px', padding: '24px', boxShadow: '0 2px 12px rgba(0,0,0,0.07)', display: 'flex', flexDirection: 'column', gap: '14px' },
+  back:           { display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'var(--c-text-2)', textDecoration: 'none', fontWeight: '500' },
+  card:           { background: 'var(--c-surface)', borderRadius: '12px', padding: '24px', boxShadow: '0 2px 12px var(--c-shadow)', display: 'flex', flexDirection: 'column', gap: '14px' },
   header:         { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', flexWrap: 'wrap' },
-  cardTitle:      { margin: 0, fontSize: '22px', fontWeight: '700', color: '#0f172a', lineHeight: '1.3' },
+  cardTitle:      { margin: 0, fontSize: '22px', fontWeight: '700', color: 'var(--c-text)', lineHeight: '1.3' },
   badge:          { fontSize: '11px', fontWeight: '700', padding: '3px 10px', borderRadius: '20px', whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: '0.4px' },
   cat:            { fontSize: '12px', fontWeight: '600', color: '#7c3aed', background: '#ede9fe', padding: '3px 10px', borderRadius: '20px', alignSelf: 'flex-start' },
-  desc:           { margin: 0, fontSize: '15px', color: '#64748b', lineHeight: '1.6' },
+  desc:           { margin: 0, fontSize: '15px', color: 'var(--c-text-2)', lineHeight: '1.6' },
   metaGroup:      { display: 'flex', flexDirection: 'column', gap: '4px' },
-  meta:           { margin: 0, fontSize: '13px', color: '#94a3b8' },
-  sectionLabel:   { margin: '0 0 10px', fontSize: '13px', fontWeight: '700', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.5px' },
+  meta:           { margin: 0, fontSize: '13px', color: 'var(--c-text-3)' },
+  sectionLabel:   { margin: '0 0 10px', fontSize: '13px', fontWeight: '700', color: 'var(--c-text)', textTransform: 'uppercase', letterSpacing: '0.5px' },
   imgs:           { display: 'flex', gap: '8px', flexWrap: 'wrap' },
   thumb:          { width: '140px', height: '100px', objectFit: 'cover', borderRadius: '8px', cursor: 'pointer' },
 
-  section:        { background: '#fff', borderRadius: '12px', padding: '20px 24px', boxShadow: '0 2px 12px rgba(0,0,0,0.07)' },
-  sectionTitle:   { margin: '0 0 16px', fontSize: '16px', fontWeight: '700', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' },
-  countBadge:     { fontSize: '11px', fontWeight: '700', background: '#f1f5f9', color: '#64748b', padding: '2px 8px', borderRadius: '20px' },
+  section:        { background: 'var(--c-surface)', borderRadius: '12px', padding: '20px 24px', boxShadow: '0 2px 12px var(--c-shadow)' },
+  sectionTitle:   { margin: '0 0 16px', fontSize: '16px', fontWeight: '700', color: 'var(--c-text)', display: 'flex', alignItems: 'center', gap: '8px' },
+  countBadge:     { fontSize: '11px', fontWeight: '700', background: 'var(--c-bg)', color: 'var(--c-text-2)', padding: '2px 8px', borderRadius: '20px' },
 
   timeline:       { display: 'flex', flexDirection: 'column', gap: '12px' },
   timelineItem:   { display: 'flex', gap: '12px', alignItems: 'flex-start' },
-  timelineText:   { margin: 0, fontSize: '13px', color: '#64748b' },
-  obs:            { margin: '4px 0 0', fontSize: '13px', color: '#94a3b8', fontStyle: 'italic' },
+  timelineText:   { margin: 0, fontSize: '13px', color: 'var(--c-text-2)' },
+  obs:            { margin: '4px 0 0', fontSize: '13px', color: 'var(--c-text-3)', fontStyle: 'italic' },
 
-  noComments:     { fontSize: '14px', color: '#94a3b8', margin: '0 0 16px' },
+  noComments:     { fontSize: '14px', color: 'var(--c-text-3)', margin: '0 0 16px' },
   comments:       { display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' },
-  comment:        { borderLeft: '3px solid #e2e8f0', paddingLeft: '14px' },
+  comment:        { borderLeft: '3px solid var(--c-border)', paddingLeft: '14px' },
   commentHeader:  { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' },
-  commentAuthor:  { fontSize: '13px', fontWeight: '600', color: '#0f172a' },
-  commentDate:    { fontWeight: 400, color: '#94a3b8' },
-  commentText:    { margin: 0, fontSize: '14px', color: '#64748b' },
+  commentAuthor:  { fontSize: '13px', fontWeight: '600', color: 'var(--c-text)' },
+  commentDate:    { fontWeight: 400, color: 'var(--c-text-3)' },
+  commentText:    { margin: 0, fontSize: '14px', color: 'var(--c-text-2)' },
   deleteBtn:      { background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', display: 'flex', alignItems: 'center', padding: '2px', opacity: 0.6 },
 
-  commentForm:    { display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid #f1f5f9', paddingTop: '16px' },
+  commentForm:    { display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid var(--c-bg)', paddingTop: '16px' },
   commentInputWrap: { display: 'flex', gap: '8px' },
-  commentInput:   { flex: 1, border: '1px solid #e2e8f0', borderRadius: '8px', padding: '10px 14px', fontSize: '14px', fontFamily: 'inherit', color: '#0f172a', outline: 'none' },
+  commentInput:   { flex: 1, border: '1px solid var(--c-border)', borderRadius: '8px', padding: '10px 14px', fontSize: '14px', fontFamily: 'inherit', color: 'var(--c-text)', outline: 'none' },
   sendBtn:        { display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 18px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' },
   commentErr:     { fontSize: '12px', color: '#ef4444', margin: 0 },
 
-  actionBtn:      { display: 'flex', alignItems: 'center', gap: '5px', background: 'none', border: '1px solid #e2e8f0', borderRadius: '20px', padding: '4px 10px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#94a3b8', fontFamily: 'inherit' },
-  center:         { textAlign: 'center', marginTop: '80px', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", color: '#94a3b8' },
+  actionBtn:      { display: 'flex', alignItems: 'center', gap: '5px', background: 'none', border: '1px solid var(--c-border)', borderRadius: '20px', padding: '4px 10px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: 'var(--c-text-3)', fontFamily: 'inherit' },
+  center:         { textAlign: 'center', marginTop: '80px', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", color: 'var(--c-text-3)' },
 };
 
 export default ReportDetailPage;

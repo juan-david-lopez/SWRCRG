@@ -90,9 +90,9 @@ const ProfilePage = () => {
           <form onSubmit={handleSaveProfile} style={s.form}>
             <div style={s.fieldGroup}>
               <label style={s.label}>Correo electrónico</label>
-              <div style={{ ...s.inputWrap, background: '#f8fafc' }}>
-                <Mail size={16} strokeWidth={1.8} color="#94a3b8" style={{ flexShrink: 0 }} />
-                <input value={user?.correo ?? ''} disabled style={{ ...s.input, color: '#94a3b8' }} />
+              <div style={{ ...s.inputWrap, background: 'var(--c-bg)' }}>
+                <Mail size={16} strokeWidth={1.8} color="var(--c-text-3)" style={{ flexShrink: 0 }} />
+                <input value={user?.correo ?? ''} disabled style={{ ...s.input, color: 'var(--c-text-3)' }} />
               </div>
               <span style={s.hint}>El correo no se puede modificar</span>
             </div>
@@ -100,14 +100,14 @@ const ProfilePage = () => {
               <div style={s.fieldGroup}>
                 <label style={s.label}>Nombre</label>
                 <div style={s.inputWrap}>
-                  <User size={16} strokeWidth={1.8} color="#94a3b8" style={{ flexShrink: 0 }} />
+                  <User size={16} strokeWidth={1.8} color="var(--c-text-3)" style={{ flexShrink: 0 }} />
                   <input name="nombre" value={form.nombre} onChange={handleFormChange} placeholder="Tu nombre" style={s.input} />
                 </div>
               </div>
               <div style={s.fieldGroup}>
                 <label style={s.label}>Apellido</label>
                 <div style={s.inputWrap}>
-                  <User size={16} strokeWidth={1.8} color="#94a3b8" style={{ flexShrink: 0 }} />
+                  <User size={16} strokeWidth={1.8} color="var(--c-text-3)" style={{ flexShrink: 0 }} />
                   <input name="apellido" value={form.apellido} onChange={handleFormChange} placeholder="Tu apellido" style={s.input} />
                 </div>
               </div>
@@ -115,7 +115,7 @@ const ProfilePage = () => {
             <div style={s.fieldGroup}>
               <label style={s.label}>Teléfono <span style={s.optional}>(opcional)</span></label>
               <div style={s.inputWrap}>
-                <Phone size={16} strokeWidth={1.8} color="#94a3b8" style={{ flexShrink: 0 }} />
+                <Phone size={16} strokeWidth={1.8} color="var(--c-text-3)" style={{ flexShrink: 0 }} />
                 <input name="telefono" value={form.telefono} onChange={handleFormChange} placeholder="+57 300 000 0000" style={s.input} />
               </div>
             </div>
@@ -140,7 +140,7 @@ const ProfilePage = () => {
               <div key={name} style={s.fieldGroup}>
                 <label style={s.label}>{label}</label>
                 <div style={s.inputWrap}>
-                  <Lock size={16} strokeWidth={1.8} color="#94a3b8" style={{ flexShrink: 0 }} />
+                  <Lock size={16} strokeWidth={1.8} color="var(--c-text-3)" style={{ flexShrink: 0 }} />
                   <input
                     name={name}
                     type={showPwd[key] ? 'text' : 'password'}
@@ -151,7 +151,7 @@ const ProfilePage = () => {
                     autoComplete="new-password"
                   />
                   <button type="button" onClick={() => setShowPwd((p) => ({ ...p, [key]: !p[key] }))} style={s.eyeBtn}>
-                    {showPwd[key] ? <EyeOff size={15} color="#94a3b8" /> : <Eye size={15} color="#94a3b8" />}
+                    {showPwd[key] ? <EyeOff size={15} color="var(--c-text-3)" /> : <Eye size={15} color="var(--c-text-3)" />}
                   </button>
                 </div>
               </div>
@@ -175,10 +175,10 @@ const ProfilePage = () => {
               { icon: Clock,       label: 'Pendientes', value: myReports.filter((r) => r.estado?.nombre === 'pendiente').length,    color: '#f59e0b' },
               { icon: CheckCircle, label: 'Resueltos',  value: myReports.filter((r) => r.estado?.nombre === 'resuelto').length,     color: '#16a34a' },
             ].map(({ icon: Icon, label, value, color }) => (
-              <div key={label} style={{ textAlign: 'center', padding: '14px', background: '#f8fafc', borderRadius: '10px' }}>
+              <div key={label} style={{ textAlign: 'center', padding: '14px', background: 'var(--c-bg)', borderRadius: '10px' }}>
                 <Icon size={18} strokeWidth={2} color={color} style={{ marginBottom: '6px' }} />
-                <p style={{ fontSize: '22px', fontWeight: '800', color: '#0f172a', margin: '0 0 2px' }}>{value}</p>
-                <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0 }}>{label}</p>
+                <p style={{ fontSize: '22px', fontWeight: '800', color: 'var(--c-text)', margin: '0 0 2px' }}>{value}</p>
+                <p style={{ fontSize: '12px', color: 'var(--c-text-3)', margin: 0 }}>{label}</p>
               </div>
             ))}
           </div>
@@ -188,16 +188,16 @@ const ProfilePage = () => {
               {Array.from({ length: 3 }).map((_, i) => <RowSkeleton key={i} />)}
             </div>
           ) : myReports.length === 0 ? (
-            <p style={{ fontSize: '14px', color: '#94a3b8', textAlign: 'center' }}>Aún no has creado reportes.</p>
+            <p style={{ fontSize: '14px', color: 'var(--c-text-3)', textAlign: 'center' }}>Aún no has creado reportes.</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {myReports.slice(0, 5).map((r) => {
                 const badge = STATUS_COLORS[r.estado?.nombre] || {};
                 return (
-                  <Link key={r.id} to={`/reports/${r.id}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', background: '#f8fafc', borderRadius: '8px', textDecoration: 'none', gap: '12px' }}>
+                  <Link key={r.id} to={`/reports/${r.id}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', background: 'var(--c-bg)', borderRadius: '8px', textDecoration: 'none', gap: '12px' }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontSize: '14px', fontWeight: '600', color: '#0f172a', margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.titulo}</p>
-                      <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0 }}>{formatDate(r.fecha_reporte)}</p>
+                      <p style={{ fontSize: '14px', fontWeight: '600', color: 'var(--c-text)', margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.titulo}</p>
+                      <p style={{ fontSize: '12px', color: 'var(--c-text-3)', margin: 0 }}>{formatDate(r.fecha_reporte)}</p>
                     </div>
                     <span style={{ ...badge, fontSize: '10px', fontWeight: '700', padding: '2px 8px', borderRadius: '20px', whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
                       {STATUS_LABEL[r.estado?.nombre] ?? r.estado?.nombre}
@@ -219,27 +219,27 @@ const ProfilePage = () => {
 };
 
 const s = {
-  page:         { minHeight: '100vh', background: '#f8fafc', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" },
+  page:         { minHeight: '100vh', background: 'var(--c-bg)', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" },
   container:    { maxWidth: '600px', margin: '0 auto', padding: '40px 20px 80px', display: 'flex', flexDirection: 'column', gap: '24px' },
   header:       { marginBottom: '4px' },
-  title:        { fontSize: '28px', fontWeight: '800', color: '#0f172a', margin: '0 0 6px' },
-  subtitle:     { fontSize: '15px', color: '#64748b', margin: 0 },
-  card:         { background: '#fff', borderRadius: '12px', padding: '28px', boxShadow: '0 2px 12px rgba(0,0,0,0.07)' },
-  cardTitle:    { margin: '0 0 16px', fontSize: '17px', fontWeight: '700', color: '#0f172a' },
+  title:        { fontSize: '28px', fontWeight: '800', color: 'var(--c-text)', margin: '0 0 6px' },
+  subtitle:     { fontSize: '15px', color: 'var(--c-text-2)', margin: 0 },
+  card:         { background: 'var(--c-surface)', borderRadius: '12px', padding: '28px', boxShadow: '0 2px 12px var(--c-shadow)' },
+  cardTitle:    { margin: '0 0 16px', fontSize: '17px', fontWeight: '700', color: 'var(--c-text)' },
   avatarSection:{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' },
   avatar:       { width: '56px', height: '56px', borderRadius: '50%', background: '#2563eb', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', fontWeight: '700', flexShrink: 0 },
-  avatarName:   { margin: '0 0 6px', fontSize: '17px', fontWeight: '700', color: '#0f172a' },
-  rolBadge:     { fontSize: '12px', fontWeight: '600', color: '#2563eb', background: '#eff6ff', padding: '3px 10px', borderRadius: '20px' },
-  divider:      { height: '1px', background: '#f1f5f9', margin: '0 0 20px' },
+  avatarName:   { margin: '0 0 6px', fontSize: '17px', fontWeight: '700', color: 'var(--c-text)' },
+  rolBadge:     { fontSize: '12px', fontWeight: '600', color: '#2563eb', background: 'var(--c-primary-bg)', padding: '3px 10px', borderRadius: '20px' },
+  divider:      { height: '1px', background: 'var(--c-bg)', margin: '0 0 20px' },
   form:         { display: 'flex', flexDirection: 'column', gap: '16px' },
   row:          { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' },
   fieldGroup:   { display: 'flex', flexDirection: 'column', gap: '6px' },
-  label:        { fontSize: '13px', fontWeight: '600', color: '#0f172a' },
-  optional:     { fontWeight: '400', color: '#94a3b8' },
-  inputWrap:    { display: 'flex', alignItems: 'center', gap: '10px', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '10px 14px', background: '#fff' },
-  input:        { flex: 1, border: 'none', outline: 'none', fontSize: '14px', color: '#0f172a', background: 'transparent', fontFamily: 'inherit' },
+  label:        { fontSize: '13px', fontWeight: '600', color: 'var(--c-text)' },
+  optional:     { fontWeight: '400', color: 'var(--c-text-3)' },
+  inputWrap:    { display: 'flex', alignItems: 'center', gap: '10px', border: '1px solid var(--c-border)', borderRadius: '8px', padding: '10px 14px', background: 'var(--c-surface)' },
+  input:        { flex: 1, border: 'none', outline: 'none', fontSize: '14px', color: 'var(--c-text)', background: 'transparent', fontFamily: 'inherit' },
   eyeBtn:       { background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0 },
-  hint:         { fontSize: '12px', color: '#94a3b8' },
+  hint:         { fontSize: '12px', color: 'var(--c-text-3)' },
   errorBox:     { fontSize: '13px', color: '#dc2626', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '10px 14px', margin: 0 },
   btn:          { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '13px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '15px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit' },
 };

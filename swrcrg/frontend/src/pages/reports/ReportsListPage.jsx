@@ -76,7 +76,7 @@ const ReportsListPage = () => {
         {/* filters */}
         <div style={s.filters}>
           <div style={s.searchWrap}>
-            <Search size={15} color="#94a3b8" style={{ flexShrink: 0 }} />
+            <Search size={15} color="var(--c-text-3)" style={{ flexShrink: 0 }} />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -85,7 +85,7 @@ const ReportsListPage = () => {
             />
             {search && (
               <button onClick={() => setSearch('')} style={s.clearBtn}>
-                <X size={14} color="#94a3b8" />
+                <X size={14} color="var(--c-text-3)" />
               </button>
             )}
           </div>
@@ -185,31 +185,31 @@ const ReportsListPage = () => {
 };
 
 const s = {
-  page:         { minHeight: '100vh', background: '#f8fafc', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", position: 'relative', paddingBottom: '80px' },
+  page:         { minHeight: '100vh', background: 'var(--c-bg)', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", position: 'relative', paddingBottom: '80px' },
   container:    { maxWidth: '720px', margin: '0 auto', padding: '40px 20px' },
   header:       { marginBottom: '24px' },
-  title:        { fontSize: '28px', fontWeight: '800', color: '#0f172a', margin: '0 0 6px' },
-  subtitle:     { fontSize: '15px', color: '#64748b', margin: 0 },
+  title:        { fontSize: '28px', fontWeight: '800', color: 'var(--c-text)', margin: '0 0 6px' },
+  subtitle:     { fontSize: '15px', color: 'var(--c-text-2)', margin: 0 },
 
   /* filters */
   filters:      { display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '16px' },
-  searchWrap:   { display: 'flex', alignItems: 'center', gap: '8px', flex: '1 1 220px', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '9px 12px', background: '#fff' },
-  searchInput:  { flex: 1, border: 'none', outline: 'none', fontSize: '14px', color: '#0f172a', background: 'transparent', fontFamily: 'inherit' },
+  searchWrap:   { display: 'flex', alignItems: 'center', gap: '8px', flex: '1 1 220px', border: '1px solid var(--c-border)', borderRadius: '8px', padding: '9px 12px', background: 'var(--c-surface)' },
+  searchInput:  { flex: 1, border: 'none', outline: 'none', fontSize: '14px', color: 'var(--c-text)', background: 'transparent', fontFamily: 'inherit' },
   clearBtn:     { background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0 },
-  select:       { padding: '9px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '13px', fontFamily: 'inherit', color: '#0f172a', background: '#fff', cursor: 'pointer', outline: 'none' },
-  clearAllBtn:  { display: 'flex', alignItems: 'center', gap: '5px', padding: '9px 14px', borderRadius: '8px', border: '1px solid #e2e8f0', background: '#fff', fontSize: '13px', fontWeight: '600', color: '#64748b', cursor: 'pointer', fontFamily: 'inherit' },
+  select:       { padding: '9px 12px', borderRadius: '8px', border: '1px solid var(--c-border)', fontSize: '13px', fontFamily: 'inherit', color: 'var(--c-text)', background: 'var(--c-surface)', cursor: 'pointer', outline: 'none' },
+  clearAllBtn:  { display: 'flex', alignItems: 'center', gap: '5px', padding: '9px 14px', borderRadius: '8px', border: '1px solid var(--c-border)', background: 'var(--c-surface)', fontSize: '13px', fontWeight: '600', color: 'var(--c-text-2)', cursor: 'pointer', fontFamily: 'inherit' },
 
-  resultsCount: { fontSize: '13px', color: '#94a3b8', margin: '0 0 20px' },
+  resultsCount: { fontSize: '13px', color: 'var(--c-text-3)', margin: '0 0 20px' },
   list:         { display: 'flex', flexDirection: 'column', gap: '20px' },
-  center:       { textAlign: 'center', marginTop: '80px', color: '#94a3b8' },
+  center:       { textAlign: 'center', marginTop: '80px', color: 'var(--c-text-3)' },
   emptyWrap:    { textAlign: 'center', marginTop: '60px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' },
-  empty:        { color: '#94a3b8', fontSize: '15px', margin: 0 },
+  empty:        { color: 'var(--c-text-3)', fontSize: '15px', margin: 0 },
 
   /* pagination */
   pagination:   { display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '40px', flexWrap: 'wrap' },
-  pageBtn:      { padding: '8px 16px', borderRadius: '8px', border: '1px solid #e2e8f0', background: '#fff', fontSize: '13px', fontWeight: '600', color: '#0f172a', cursor: 'pointer', fontFamily: 'inherit' },
+  pageBtn:      { padding: '8px 16px', borderRadius: '8px', border: '1px solid var(--c-border)', background: 'var(--c-surface)', fontSize: '13px', fontWeight: '600', color: 'var(--c-text)', cursor: 'pointer', fontFamily: 'inherit' },
   pageNumbers:  { display: 'flex', gap: '4px' },
-  pageNum:      { width: '36px', height: '36px', borderRadius: '8px', border: '1px solid #e2e8f0', background: '#fff', fontSize: '13px', fontWeight: '600', color: '#64748b', cursor: 'pointer', fontFamily: 'inherit' },
+  pageNum:      { width: '36px', height: '36px', borderRadius: '8px', border: '1px solid var(--c-border)', background: 'var(--c-surface)', fontSize: '13px', fontWeight: '600', color: 'var(--c-text-2)', cursor: 'pointer', fontFamily: 'inherit' },
   pageNumActive:{ background: '#2563eb', color: '#fff', border: '1px solid #2563eb' },
 
   fab:          { position: 'fixed', bottom: '32px', right: '32px', width: '52px', height: '52px', borderRadius: '50%', background: '#2563eb', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(37,99,235,0.4)', zIndex: 100 },

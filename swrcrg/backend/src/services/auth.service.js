@@ -6,7 +6,8 @@ const { Usuario, Rol } = require('../models');
 const { JWT_SECRET, JWT_EXPIRES_IN } = require('../config/env');
 
 const register = async ({ nombre, apellido, correo, contrasena, telefono, rol: rolSolicitado }, callerRol) => {
-  const existing = await Usuario.findOne({ where: { correo } });
+  const correoNorm = correo.trim().toLowerCase();
+  const existing = await Usuario.findOne({ where: { correo: correoNorm } });
   if (existing) throw Object.assign(new Error('El correo ya está registrado'), { status: 409 });
 
   if (rolSolicitado === 'administrador' && callerRol !== 'administrador') {
@@ -18,7 +19,7 @@ const register = async ({ nombre, apellido, correo, contrasena, telefono, rol: r
   if (!rol) throw Object.assign(new Error(`Rol '${rolNombre}' no encontrado`), { status: 500 });
 
   const hash = await bcrypt.hash(contrasena, 10);
-  const user = await Usuario.create({ nombre, apellido, correo, contrasena: hash, telefono, rol_id: rol.id });
+  const user = await Usuario.create({ nombre, apellido, correo: correoNorm, contrasena: hash, telefono, rol_id: rol.id });
 
   const { contrasena: _, ...safe } = user.toJSON();
   return safe;

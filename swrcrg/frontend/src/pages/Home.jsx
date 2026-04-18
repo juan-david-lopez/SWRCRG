@@ -5,6 +5,9 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { getReports } from '../services/report.service';
 import { useAuth } from '../context/AuthContext';
 import { STATUS_COLORS } from '../constants/reportStatus';
+import { TILE_URL, TILE_ATTR, createStatusIcon } from '../components/MapMarkers';
+
+const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3000';
 
 /* ── helpers ── */
 const formatDate = (iso) =>
@@ -24,11 +27,12 @@ const FeatureCard = ({ icon: Icon, title, desc }) => (
 const MiniReportCard = ({ report }) => {
   const estado = report.estado?.nombre ?? '';
   const badge  = STATUS_COLORS[estado] || {};
-  const img    = report.imagenes?.[0]?.url_imagen;
+  const rawImg = report.imagenes?.[0]?.url_imagen;
+  const img    = rawImg ? `${API_BASE}${rawImg}` : null;
 
   return (
     <Link to={`/reports/${report.id}`} style={s.miniCard}>
-      <div style={{ ...s.miniImg, background: img ? 'transparent' : '#1e293b' }}>
+      <div style={{ ...s.miniImg, background: img ? 'transparent' : 'var(--c-text)' }}>
         {img
           ? <img src={img} alt={report.titulo} style={s.miniImgEl} />
           : <ImageOff size={32} strokeWidth={1.5} color="#94a3b8" />
@@ -143,13 +147,20 @@ const Home = () => {
                 zoom={13}
                 style={{ height: '100%', width: '100%', borderRadius: '16px' }}
                 scrollWheelZoom={false}
+                zoomControl={false}
               >
-                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                <TileLayer url={TILE_URL} attribution={TILE_ATTR} />
                 {reports.map((r) => (
-                  <Marker key={r.id} position={[parseFloat(r.latitud), parseFloat(r.longitud)]}>
+                  <Marker
+                    key={r.id}
+                    position={[parseFloat(r.latitud), parseFloat(r.longitud)]}
+                    icon={createStatusIcon(r.estado?.nombre, 14)}
+                  >
                     <Popup>
-                      <strong>{r.titulo}</strong><br />
-                      {r.estado?.nombre}
+                      <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", minWidth: '150px', padding: '2px 0' }}>
+                        <strong style={{ fontSize: '13px', color: 'var(--c-text)', display: 'block', marginBottom: '4px' }}>{r.titulo}</strong>
+                        <span style={{ fontSize: '11px', color: 'var(--c-text-2)' }}>{r.categoria?.nombre?.replace(/_/g, ' ')}</span>
+                      </div>
                     </Popup>
                   </Marker>
                 ))}
@@ -228,9 +239,9 @@ const Home = () => {
             </div>
             <div>
               <p style={s.footerColTitle}>Legal</p>
-              <span style={s.footerLink}>Privacidad</span>
-              <span style={s.footerLink}>Términos</span>
-              <span style={s.footerLink}>Cookies</span>
+              <Link to="/privacidad" style={s.footerLink}>Privacidad</Link>
+              <Link to="/terminos"   style={s.footerLink}>Términos</Link>
+              <Link to="/cookies"    style={s.footerLink}>Cookies</Link>
             </div>
           </div>
         </div>
@@ -245,7 +256,7 @@ const Home = () => {
 
 /* ── styles ── */
 const s = {
-  page: { width: '100%', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", color: '#1e293b', overflowX: 'hidden' },
+  page: { width: '100%', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", color: 'var(--c-text)', overflowX: 'hidden' },
   container: { maxWidth: '1100px', margin: '0 auto', padding: '0 24px' },
 
   /* hero */
@@ -258,44 +269,44 @@ const s = {
   btnOutline: { padding: '12px 28px', background: 'transparent', color: '#2563eb', border: '2px solid #2563eb', borderRadius: '8px', fontSize: '15px', fontWeight: '600', cursor: 'pointer' },
 
   /* features */
-  features: { padding: '64px 0', background: '#fff' },
+  features: { padding: '64px 0', background: 'var(--c-surface)' },
   featuresGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '24px' },
-  featureCard: { padding: '28px 24px', borderRadius: '12px', border: '1px solid #e2e8f0', background: '#fff', textAlign: 'left' },
+  featureCard: { padding: '28px 24px', borderRadius: '12px', border: '1px solid var(--c-border)', background: 'var(--c-surface)', textAlign: 'left' },
   featureIcon: { fontSize: '28px', display: 'block', marginBottom: '12px' },
-  featureTitle: { fontSize: '16px', fontWeight: '600', margin: '0 0 8px', color: '#0f172a' },
-  featureDesc: { fontSize: '14px', color: '#64748b', margin: 0, lineHeight: '1.6' },
+  featureTitle: { fontSize: '16px', fontWeight: '600', margin: '0 0 8px', color: 'var(--c-text)' },
+  featureDesc: { fontSize: '14px', color: 'var(--c-text-2)', margin: 0, lineHeight: '1.6' },
 
   /* stats */
-  statsSection: { padding: '72px 0', background: '#f8fafc' },
+  statsSection: { padding: '72px 0', background: 'var(--c-bg)' },
   statsInner: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '48px', alignItems: 'center' },
   statsLeft: { textAlign: 'left' },
   statsEyebrow: { fontSize: '12px', fontWeight: '700', letterSpacing: '1.5px', color: '#2563eb', margin: '0 0 12px', textTransform: 'uppercase' },
-  statsTitle: { fontSize: '36px', fontWeight: '700', margin: '0 0 16px', color: '#0f172a', lineHeight: '1.2' },
-  statsDesc: { fontSize: '15px', color: '#64748b', margin: '0 0 32px', lineHeight: '1.7' },
+  statsTitle: { fontSize: '36px', fontWeight: '700', margin: '0 0 16px', color: 'var(--c-text)', lineHeight: '1.2' },
+  statsDesc: { fontSize: '15px', color: 'var(--c-text-2)', margin: '0 0 32px', lineHeight: '1.7' },
   statsNumbers: { display: 'flex', gap: '40px' },
   statItem: { display: 'flex', flexDirection: 'column', gap: '4px' },
-  statNum: { fontSize: '32px', fontWeight: '700', color: '#0f172a' },
-  statLabel: { fontSize: '11px', fontWeight: '600', letterSpacing: '1px', color: '#94a3b8', textTransform: 'uppercase' },
-  mapCard: { background: '#e2e8f0', borderRadius: '16px', minHeight: '280px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  mapPlaceholder: { textAlign: 'center', color: '#94a3b8' },
-  mapLabel: { fontSize: '16px', fontWeight: '600', margin: '0 0 4px', color: '#64748b' },
+  statNum: { fontSize: '32px', fontWeight: '700', color: 'var(--c-text)' },
+  statLabel: { fontSize: '11px', fontWeight: '600', letterSpacing: '1px', color: 'var(--c-text-3)', textTransform: 'uppercase' },
+  mapCard: { background: 'var(--c-border)', borderRadius: '16px', minHeight: '280px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  mapPlaceholder: { textAlign: 'center', color: 'var(--c-text-3)' },
+  mapLabel: { fontSize: '16px', fontWeight: '600', margin: '0 0 4px', color: 'var(--c-text-2)' },
   mapSub: { fontSize: '13px', margin: 0 },
 
   /* recent */
-  recentSection: { padding: '72px 0', background: '#fff' },
-  sectionTitle: { fontSize: '28px', fontWeight: '700', textAlign: 'center', margin: '0 0 40px', color: '#0f172a' },
+  recentSection: { padding: '72px 0', background: 'var(--c-surface)' },
+  sectionTitle: { fontSize: '28px', fontWeight: '700', textAlign: 'center', margin: '0 0 40px', color: 'var(--c-text)' },
   recentGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '20px' },
-  loadingText: { textAlign: 'center', color: '#94a3b8', fontSize: '15px' },
+  loadingText: { textAlign: 'center', color: 'var(--c-text-3)', fontSize: '15px' },
   seeAllLink: { color: '#2563eb', textDecoration: 'none', fontWeight: '600', fontSize: '15px' },
 
   /* mini card */
-  miniCard: { borderRadius: '12px', overflow: 'hidden', border: '1px solid #e2e8f0', textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column', transition: 'box-shadow .2s' },
+  miniCard: { borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--c-border)', textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column', transition: 'box-shadow .2s' },
   miniImg: { height: '140px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   miniImgEl: { width: '100%', height: '100%', objectFit: 'cover' },
   miniBody: { padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '6px' },
   miniBadge: { fontSize: '11px', padding: '2px 8px', borderRadius: '20px', alignSelf: 'flex-start', fontWeight: '600' },
-  miniTitle: { fontSize: '14px', fontWeight: '600', margin: 0, color: '#0f172a', lineHeight: '1.4' },
-  miniMeta: { fontSize: '12px', color: '#94a3b8', margin: 0 },
+  miniTitle: { fontSize: '14px', fontWeight: '600', margin: 0, color: 'var(--c-text)', lineHeight: '1.4' },
+  miniMeta: { fontSize: '12px', color: 'var(--c-text-3)', margin: 0 },
 
   /* cta */
   cta: { background: '#2563eb', padding: '80px 24px', textAlign: 'center' },
@@ -306,15 +317,15 @@ const s = {
   btnOutlineWhite: { padding: '12px 28px', background: 'transparent', color: '#fff', border: '2px solid rgba(255,255,255,0.5)', borderRadius: '8px', fontSize: '15px', fontWeight: '600', cursor: 'pointer' },
 
   /* footer */
-  footer: { background: '#0f172a', color: '#94a3b8', padding: '56px 0 0' },
+  footer: { background: '#0f172a', color: 'var(--c-text-3)', padding: '56px 0 0' },
   footerInner: { display: 'grid', gridTemplateColumns: '1.5fr 2fr', gap: '48px', paddingBottom: '48px' },
   footerBrand: { textAlign: 'left' },
   footerLogo: { fontSize: '20px', fontWeight: '700', color: '#f1f5f9', display: 'block', marginBottom: '12px' },
   footerTagline: { fontSize: '14px', lineHeight: '1.7', margin: 0 },
   footerLinks: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px', textAlign: 'left' },
   footerColTitle: { fontSize: '13px', fontWeight: '700', color: '#f1f5f9', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: '0.5px' },
-  footerLink: { display: 'block', fontSize: '14px', color: '#94a3b8', textDecoration: 'none', marginBottom: '8px', cursor: 'pointer' },
-  footerBottom: { borderTop: '1px solid #1e293b', padding: '20px 24px', textAlign: 'center', fontSize: '13px' },
+  footerLink: { display: 'block', fontSize: '14px', color: 'var(--c-text-3)', textDecoration: 'none', marginBottom: '8px', cursor: 'pointer' },
+  footerBottom: { borderTop: '1px solid var(--c-text)', padding: '20px 24px', textAlign: 'center', fontSize: '13px' },
 };
 
 export default Home;

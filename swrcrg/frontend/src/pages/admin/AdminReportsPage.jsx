@@ -179,7 +179,7 @@ const AdminReportsPage = () => {
         {tab === 'stats' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             <div style={s.card}>
-              <h3 style={{ margin: '0 0 20px', fontSize: '16px', fontWeight: '700', color: '#0f172a' }}>Reportes por categoría</h3>
+              <h3 style={{ margin: '0 0 20px', fontSize: '16px', fontWeight: '700', color: 'var(--c-text)' }}>Reportes por categoría</h3>
               {catStats.length === 0 ? (
                 <p style={s.empty}>Sin datos</p>
               ) : (
@@ -187,10 +187,10 @@ const AdminReportsPage = () => {
                   {catStats.map(([nombre, count]) => (
                     <div key={nombre}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                        <span style={{ fontSize: '13px', fontWeight: '600', color: '#0f172a', textTransform: 'capitalize' }}>{nombre}</span>
-                        <span style={{ fontSize: '13px', color: '#64748b' }}>{count}</span>
+                        <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--c-text)', textTransform: 'capitalize' }}>{nombre}</span>
+                        <span style={{ fontSize: '13px', color: 'var(--c-text-2)' }}>{count}</span>
                       </div>
-                      <div style={{ height: '8px', background: '#f1f5f9', borderRadius: '4px', overflow: 'hidden' }}>
+                      <div style={{ height: '8px', background: 'var(--c-bg)', borderRadius: '4px', overflow: 'hidden' }}>
                         <div style={{ height: '100%', width: `${(count / maxCat) * 100}%`, background: '#2563eb', borderRadius: '4px', transition: 'width .4s ease' }} />
                       </div>
                     </div>
@@ -206,7 +206,7 @@ const AdminReportsPage = () => {
               ].map(({ label, value, color }) => (
                 <div key={label} style={{ ...s.card, textAlign: 'center' }}>
                   <p style={{ fontSize: '32px', fontWeight: '800', color, margin: '0 0 4px' }}>{value}</p>
-                  <p style={{ fontSize: '13px', color: '#94a3b8', margin: 0 }}>{label}</p>
+                  <p style={{ fontSize: '13px', color: 'var(--c-text-3)', margin: 0 }}>{label}</p>
                 </div>
               ))}
             </div>
@@ -218,9 +218,9 @@ const AdminReportsPage = () => {
           <>
             <div style={s.filters}>
               <div style={s.searchWrap}>
-                <Search size={15} color="#94a3b8" style={{ flexShrink: 0 }} />
+                <Search size={15} color="var(--c-text-3)" style={{ flexShrink: 0 }} />
                 <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por título o usuario..." style={s.searchInput} />
-                {search && <button onClick={() => setSearch('')} style={s.clearBtn}><X size={13} color="#94a3b8" /></button>}
+                {search && <button onClick={() => setSearch('')} style={s.clearBtn}><X size={13} color="var(--c-text-3)" /></button>}
               </div>
               <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} style={s.select}>
                 <option value="">Todos los estados</option>
@@ -249,9 +249,9 @@ const AdminReportsPage = () => {
                       </div>
                       <p style={s.desc}>{r.descripcion}</p>
                       <div style={s.metaRow}>
-                        {r.usuario && <span style={s.metaItem}><User size={12} strokeWidth={2} color="#94a3b8" />{r.usuario.nombre} {r.usuario.apellido}</span>}
-                        {r.direccion_referencia && <span style={s.metaItem}><MapPin size={12} strokeWidth={2} color="#94a3b8" />{r.direccion_referencia}</span>}
-                        <span style={s.metaItem}><Calendar size={12} strokeWidth={2} color="#94a3b8" />{formatDate(r.fecha_reporte)}</span>
+                        {r.usuario && <span style={s.metaItem}><User size={12} strokeWidth={2} color="var(--c-text-3)" />{r.usuario.nombre} {r.usuario.apellido}</span>}
+                        {r.direccion_referencia && <span style={s.metaItem}><MapPin size={12} strokeWidth={2} color="var(--c-text-3)" />{r.direccion_referencia}</span>}
+                        <span style={s.metaItem}><Calendar size={12} strokeWidth={2} color="var(--c-text-3)" />{formatDate(r.fecha_reporte)}</span>
                       </div>
                       {r.imagenes?.length > 0 && (
                         <div style={s.imgs}>
@@ -271,7 +271,7 @@ const AdminReportsPage = () => {
                           <select value={estadoNombre} disabled={updating === r.id} onChange={(e) => handleStatusChange(r.id, e.target.value)} style={s.selectAction}>
                             {REPORT_STATUSES.map((st) => <option key={st} value={st}>{STATUS_LABEL[st]}</option>)}
                           </select>
-                          <ChevronDown size={14} color="#64748b" style={s.selectIcon} />
+                          <ChevronDown size={14} color="var(--c-text-2)" style={s.selectIcon} />
                         </div>
                         {updating === r.id && <span style={s.saving}>Guardando...</span>}
                       </div>
@@ -288,9 +288,9 @@ const AdminReportsPage = () => {
           <>
             <div style={{ ...s.filters, marginBottom: '12px' }}>
               <div style={s.searchWrap}>
-                <Search size={15} color="#94a3b8" style={{ flexShrink: 0 }} />
+                <Search size={15} color="var(--c-text-3)" style={{ flexShrink: 0 }} />
                 <input value={searchUsers} onChange={(e) => setSearchUsers(e.target.value)} placeholder="Buscar por nombre, apellido o correo..." style={s.searchInput} />
-                {searchUsers && <button onClick={() => setSearchUsers('')} style={s.clearBtn}><X size={13} color="#94a3b8" /></button>}
+                {searchUsers && <button onClick={() => setSearchUsers('')} style={s.clearBtn}><X size={13} color="var(--c-text-3)" /></button>}
               </div>
             </div>
             <p style={s.resultsCount}>{filteredUsers.length} usuario(s)</p>
@@ -316,7 +316,7 @@ const AdminReportsPage = () => {
                             <option value="ciudadano">Ciudadano</option>
                             <option value="administrador">Administrador</option>
                           </select>
-                          <ChevronDown size={14} color="#64748b" style={s.selectIcon} />
+                          <ChevronDown size={14} color="var(--c-text-2)" style={s.selectIcon} />
                         </div>
                         <button
                           onClick={() => setConfirmToggle(u)}
@@ -327,7 +327,7 @@ const AdminReportsPage = () => {
                       </div>
                     </div>
                     <div style={s.metaRow}>
-                      <span style={s.metaItem}><Calendar size={12} strokeWidth={2} color="#94a3b8" />Registrado: {formatDate(u.fecha_creacion)}</span>
+                      <span style={s.metaItem}><Calendar size={12} strokeWidth={2} color="var(--c-text-3)" />Registrado: {formatDate(u.fecha_creacion)}</span>
                       {!u.activo && <span style={{ ...s.badge, background: '#fef2f2', color: '#dc2626' }}>INACTIVO</span>}
                     </div>
                   </div>
@@ -352,56 +352,56 @@ const AdminReportsPage = () => {
 };
 
 const s = {
-  page:         { minHeight: '100vh', background: '#f8fafc', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" },
+  page:         { minHeight: '100vh', background: 'var(--c-bg)', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" },
   container:    { maxWidth: '960px', margin: '0 auto', padding: '40px 20px 80px' },
   pageHeader:   { marginBottom: '24px' },
-  pageTitle:    { fontSize: '28px', fontWeight: '800', color: '#0f172a', margin: 0 },
+  pageTitle:    { fontSize: '28px', fontWeight: '800', color: 'var(--c-text)', margin: 0 },
 
   statsGrid:    { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '32px' },
-  statCard:     { background: '#fff', borderRadius: '12px', padding: '18px 20px', boxShadow: '0 2px 12px rgba(0,0,0,0.07)', display: 'flex', alignItems: 'center', gap: '14px' },
+  statCard:     { background: 'var(--c-surface)', borderRadius: '12px', padding: '18px 20px', boxShadow: '0 2px 12px var(--c-shadow)', display: 'flex', alignItems: 'center', gap: '14px' },
   statIcon:     { width: '44px', height: '44px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  statValue:    { margin: 0, fontSize: '24px', fontWeight: '800', color: '#0f172a' },
-  statLabel:    { margin: 0, fontSize: '12px', color: '#94a3b8', fontWeight: '500' },
+  statValue:    { margin: 0, fontSize: '24px', fontWeight: '800', color: 'var(--c-text)' },
+  statLabel:    { margin: 0, fontSize: '12px', color: 'var(--c-text-3)', fontWeight: '500' },
 
-  tabs:         { display: 'flex', gap: '4px', background: '#f1f5f9', borderRadius: '10px', padding: '4px', marginBottom: '24px', width: 'fit-content' },
-  tab:          { display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 18px', borderRadius: '8px', border: 'none', background: 'transparent', fontSize: '14px', fontWeight: '600', color: '#64748b', cursor: 'pointer', fontFamily: 'inherit' },
-  tabActive:    { background: '#fff', color: '#0f172a', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' },
+  tabs:         { display: 'flex', gap: '4px', background: 'var(--c-bg)', borderRadius: '10px', padding: '4px', marginBottom: '24px', width: 'fit-content' },
+  tab:          { display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 18px', borderRadius: '8px', border: 'none', background: 'transparent', fontSize: '14px', fontWeight: '600', color: 'var(--c-text-2)', cursor: 'pointer', fontFamily: 'inherit' },
+  tabActive:    { background: 'var(--c-surface)', color: 'var(--c-text)', boxShadow: '0 1px 4px var(--c-shadow)' },
 
   filters:      { display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '12px' },
-  searchWrap:   { display: 'flex', alignItems: 'center', gap: '8px', flex: '1 1 220px', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '9px 12px', background: '#fff' },
-  searchInput:  { flex: 1, border: 'none', outline: 'none', fontSize: '14px', color: '#0f172a', background: 'transparent', fontFamily: 'inherit' },
+  searchWrap:   { display: 'flex', alignItems: 'center', gap: '8px', flex: '1 1 220px', border: '1px solid var(--c-border)', borderRadius: '8px', padding: '9px 12px', background: 'var(--c-surface)' },
+  searchInput:  { flex: 1, border: 'none', outline: 'none', fontSize: '14px', color: 'var(--c-text)', background: 'transparent', fontFamily: 'inherit' },
   clearBtn:     { background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0 },
-  select:       { padding: '9px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '13px', fontFamily: 'inherit', color: '#0f172a', background: '#fff', cursor: 'pointer', outline: 'none' },
-  resultsCount: { fontSize: '13px', color: '#94a3b8', margin: '0 0 16px' },
+  select:       { padding: '9px 12px', borderRadius: '8px', border: '1px solid var(--c-border)', fontSize: '13px', fontFamily: 'inherit', color: 'var(--c-text)', background: 'var(--c-surface)', cursor: 'pointer', outline: 'none' },
+  resultsCount: { fontSize: '13px', color: 'var(--c-text-3)', margin: '0 0 16px' },
 
   list:         { display: 'flex', flexDirection: 'column', gap: '16px' },
-  card:         { background: '#fff', borderRadius: '12px', padding: '20px 24px', boxShadow: '0 2px 12px rgba(0,0,0,0.07)', display: 'flex', flexDirection: 'column', gap: '12px' },
+  card:         { background: 'var(--c-surface)', borderRadius: '12px', padding: '20px 24px', boxShadow: '0 2px 12px var(--c-shadow)', display: 'flex', flexDirection: 'column', gap: '12px' },
   cardHeader:   { display: 'flex', flexDirection: 'column', gap: '8px' },
   titleRow:     { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', flexWrap: 'wrap' },
-  cardTitle:    { margin: 0, fontSize: '17px', fontWeight: '700', color: '#0f172a', lineHeight: '1.3' },
+  cardTitle:    { margin: 0, fontSize: '17px', fontWeight: '700', color: 'var(--c-text)', lineHeight: '1.3' },
   badge:        { fontSize: '11px', fontWeight: '700', padding: '3px 10px', borderRadius: '20px', whiteSpace: 'nowrap', flexShrink: 0, textTransform: 'uppercase', letterSpacing: '0.4px' },
   categoria:    { fontSize: '12px', fontWeight: '600', color: '#7c3aed', background: '#ede9fe', padding: '3px 10px', borderRadius: '20px', alignSelf: 'flex-start' },
-  desc:         { margin: 0, fontSize: '14px', color: '#64748b', lineHeight: '1.6' },
+  desc:         { margin: 0, fontSize: '14px', color: 'var(--c-text-2)', lineHeight: '1.6' },
   metaRow:      { display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' },
-  metaItem:     { display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: '#94a3b8' },
+  metaItem:     { display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: 'var(--c-text-3)' },
   imgs:         { display: 'flex', gap: '8px', flexWrap: 'wrap' },
   thumb:        { width: '120px', height: '80px', objectFit: 'cover', borderRadius: '8px' },
-  actions:      { display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', paddingTop: '4px', borderTop: '1px solid #f1f5f9' },
-  obsInput:     { flex: 1, minWidth: '160px', padding: '9px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '13px', fontFamily: 'inherit', color: '#0f172a', outline: 'none' },
+  actions:      { display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', paddingTop: '4px', borderTop: '1px solid var(--c-bg)' },
+  obsInput:     { flex: 1, minWidth: '160px', padding: '9px 12px', borderRadius: '8px', border: '1px solid var(--c-border)', fontSize: '13px', fontFamily: 'inherit', color: 'var(--c-text)', outline: 'none' },
   selectWrap:   { position: 'relative', display: 'flex', alignItems: 'center' },
-  selectAction: { padding: '9px 32px 9px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '13px', fontFamily: 'inherit', color: '#0f172a', cursor: 'pointer', appearance: 'none', background: '#fff', outline: 'none' },
+  selectAction: { padding: '9px 32px 9px 12px', borderRadius: '8px', border: '1px solid var(--c-border)', fontSize: '13px', fontFamily: 'inherit', color: 'var(--c-text)', cursor: 'pointer', appearance: 'none', background: 'var(--c-surface)', outline: 'none' },
   selectIcon:   { position: 'absolute', right: '10px', pointerEvents: 'none' },
   saving:       { fontSize: '12px', color: '#2563eb', fontWeight: '600' },
 
   userRow:      { display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' },
   userAvatar:   { width: '40px', height: '40px', borderRadius: '50%', background: '#2563eb', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '700', flexShrink: 0, textTransform: 'uppercase' },
-  userName:     { margin: '0 0 2px', fontSize: '15px', fontWeight: '700', color: '#0f172a' },
-  userEmail:    { margin: 0, fontSize: '13px', color: '#94a3b8' },
+  userName:     { margin: '0 0 2px', fontSize: '15px', fontWeight: '700', color: 'var(--c-text)' },
+  userEmail:    { margin: 0, fontSize: '13px', color: 'var(--c-text-3)' },
   userActions:  { display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto', flexWrap: 'wrap' },
   toggleBtn:    { padding: '7px 14px', borderRadius: '8px', border: 'none', fontSize: '13px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit' },
 
-  empty:        { color: '#94a3b8', textAlign: 'center', marginTop: '40px', fontSize: '15px' },
-  exportBtn:    { display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px', borderRadius: '8px', border: '1px solid #e2e8f0', background: '#fff', fontSize: '13px', fontWeight: '600', color: '#0f172a', cursor: 'pointer', fontFamily: 'inherit' },
+  empty:        { color: 'var(--c-text-3)', textAlign: 'center', marginTop: '40px', fontSize: '15px' },
+  exportBtn:    { display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px', borderRadius: '8px', border: '1px solid var(--c-border)', background: 'var(--c-surface)', fontSize: '13px', fontWeight: '600', color: 'var(--c-text)', cursor: 'pointer', fontFamily: 'inherit' },
 };
 
 export default AdminReportsPage;

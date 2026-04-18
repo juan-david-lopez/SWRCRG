@@ -39,7 +39,7 @@ const STRENGTH_COLOR = ['', '#ef4444', '#f97316', '#eab308', '#22c55e', '#16a34a
 /* ── Input con icono ── */
 const IconInput = ({ icon: Icon, name, type = 'text', value, placeholder, onChange, onBlur, error, hint, right }) => (
   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-    <div style={{ ...s.inputWrap, borderColor: error ? '#ef4444' : '#d1d5db' }}>
+    <div style={{ ...s.inputWrap, borderColor: error ? '#ef4444' : 'var(--c-border)' }}>
       <Icon size={16} strokeWidth={1.8} color={error ? '#ef4444' : '#9ca3af'} style={{ flexShrink: 0 }} />
       <input
         name={name} type={type} value={value}
@@ -129,7 +129,7 @@ const RegisterPage = () => {
   const strength = passwordStrength(form.contrasena);
 
   return (
-    <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", minHeight: '100vh', background: '#f1f5f9', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", minHeight: '100vh', background: 'var(--c-bg)', display: 'flex', flexDirection: 'column' }}>
       <Navbar />
       <div style={s.page}>
         <form onSubmit={handleSubmit} style={s.card} noValidate>
@@ -146,7 +146,7 @@ const RegisterPage = () => {
 
         {/* Contraseña */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          <div style={{ ...s.inputWrap, borderColor: fieldError('contrasena') ? '#ef4444' : '#d1d5db' }}>
+          <div style={{ ...s.inputWrap, borderColor: fieldError('contrasena') ? '#ef4444' : 'var(--c-border)' }}>
             <Lock size={16} strokeWidth={1.8} color={fieldError('contrasena') ? '#ef4444' : '#9ca3af'} style={{ flexShrink: 0 }} />
             <input
               name="contrasena" type={showPwd ? 'text' : 'password'}
@@ -174,7 +174,7 @@ const RegisterPage = () => {
 
         {/* Confirmar contraseña */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          <div style={{ ...s.inputWrap, borderColor: fieldError('confirmar') ? '#ef4444' : '#d1d5db' }}>
+          <div style={{ ...s.inputWrap, borderColor: fieldError('confirmar') ? '#ef4444' : 'var(--c-border)' }}>
             <Lock size={16} strokeWidth={1.8} color={fieldError('confirmar') ? '#ef4444' : '#9ca3af'} style={{ flexShrink: 0 }} />
             <input
               name="confirmar" type={showConf ? 'text' : 'password'}
@@ -209,18 +209,18 @@ const RegisterPage = () => {
 
 const s = {
   page:        { display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1, padding: '32px 16px' },
-  card:        { display: 'flex', flexDirection: 'column', gap: '14px', background: '#fff', padding: '36px 32px', borderRadius: '16px', width: '100%', maxWidth: '420px', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' },
-  title:       { margin: '0 0 8px', fontSize: '24px', fontWeight: '700', color: '#0f172a' },
-  backLink:    { display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#64748b', textDecoration: 'none', fontWeight: '500', marginBottom: '4px' },
-  inputWrap:   { display: 'flex', alignItems: 'center', gap: '10px', border: '1px solid #d1d5db', borderRadius: '8px', padding: '10px 14px', background: '#fff', transition: 'border-color .15s' },
-  input:       { flex: 1, border: 'none', outline: 'none', fontSize: '14px', color: '#0f172a', background: 'transparent', fontFamily: 'inherit' },
+  card:        { display: 'flex', flexDirection: 'column', gap: '14px', background: 'var(--c-surface)', padding: '36px 32px', borderRadius: '16px', width: '100%', maxWidth: '420px', boxShadow: '0 4px 24px var(--c-shadow)' },
+  title:       { margin: '0 0 8px', fontSize: '24px', fontWeight: '700', color: 'var(--c-text)' },
+  backLink:    { display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'var(--c-text-2)', textDecoration: 'none', fontWeight: '500', marginBottom: '4px' },
+  inputWrap:   { display: 'flex', alignItems: 'center', gap: '10px', border: '1px solid var(--c-border)', borderRadius: '8px', padding: '10px 14px', background: 'var(--c-surface)', transition: 'border-color .15s' },
+  input:       { flex: 1, border: 'none', outline: 'none', fontSize: '14px', color: 'var(--c-text)', background: 'transparent', fontFamily: 'inherit' },
   eyeBtn:      { background: 'none', border: 'none', cursor: 'pointer', padding: '0', display: 'flex', alignItems: 'center' },
-  hint:        { fontSize: '12px', color: '#94a3b8', margin: 0 },
+  hint:        { fontSize: '12px', color: 'var(--c-text-3)', margin: 0 },
   fieldErr:    { fontSize: '12px', color: '#ef4444', margin: 0 },
-  strengthTrack: { height: '4px', background: '#e2e8f0', borderRadius: '2px', overflow: 'hidden' },
+  strengthTrack: { height: '4px', background: 'var(--c-border)', borderRadius: '2px', overflow: 'hidden' },
   strengthFill:  { height: '100%', borderRadius: '2px', transition: 'width .3s, background .3s' },
   btn:         { padding: '13px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '15px', fontWeight: '600', fontFamily: 'inherit', marginTop: '4px' },
-  loginLink:   { textAlign: 'center', fontSize: '13px', margin: 0, color: '#64748b' },
+  loginLink:   { textAlign: 'center', fontSize: '13px', margin: 0, color: 'var(--c-text-2)' },
   loginAnchor: { color: '#2563eb', fontWeight: '600', textDecoration: 'none' },
   errorBox:    { fontSize: '13px', color: '#dc2626', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '6px', padding: '10px 12px', margin: 0 },
   successBox:  { fontSize: '13px', color: '#16a34a', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '6px', padding: '10px 12px', margin: 0 },

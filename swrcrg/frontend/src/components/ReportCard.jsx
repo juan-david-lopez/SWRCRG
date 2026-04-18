@@ -6,6 +6,8 @@ import { voteReport } from '../services/report.service';
 import { useAuth } from '../context/AuthContext';
 import { toast } from './Toast';
 
+const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3000';
+
 const formatDate = (iso) =>
   new Date(iso).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
 
@@ -32,7 +34,9 @@ const ReportCard = ({ report }) => {
   const autor  = report.usuario
     ? `${report.usuario.nombre} ${report.usuario.apellido}`
     : null;
-  const img    = report.imagenes?.[0]?.url_imagen;
+  const img    = report.imagenes?.[0]?.url_imagen
+    ? `${API_BASE}${report.imagenes[0].url_imagen}`
+    : null;
   const lat    = report.latitud  ?? report.latitude;
   const lng    = report.longitud ?? report.longitude;
 
@@ -44,7 +48,7 @@ const ReportCard = ({ report }) => {
           ? <img src={img} alt={report.titulo} style={s.img} />
           : (
             <div style={s.imgPlaceholder}>
-              <ImageOff size={36} strokeWidth={1.2} color="#94a3b8" />
+              <ImageOff size={36} strokeWidth={1.2} color="var(--c-text-3)" />
             </div>
           )
         }
@@ -75,22 +79,22 @@ const ReportCard = ({ report }) => {
           <div style={s.metaGroup}>
             {autor && (
               <span style={s.metaItem}>
-                <User size={12} strokeWidth={2} color="#94a3b8" />
+                <User size={12} strokeWidth={2} color="var(--c-text-3)" />
                 Por: {autor}
               </span>
             )}
             {lat != null && (
               <span style={s.metaItem}>
-                <MapPin size={12} strokeWidth={2} color="#94a3b8" />
+                <MapPin size={12} strokeWidth={2} color="var(--c-text-3)" />
                 {Number(lat).toFixed(4)}, {Number(lng).toFixed(4)}
                 {' · '}
-                <Calendar size={12} strokeWidth={2} color="#94a3b8" style={{ marginLeft: '4px' }} />
+                <Calendar size={12} strokeWidth={2} color="var(--c-text-3)" style={{ marginLeft: '4px' }} />
                 {formatDate(report.fecha_reporte ?? report.created_at)}
               </span>
             )}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <button onClick={handleVote} style={{ ...s.voteBtn, color: voted ? '#2563eb' : '#94a3b8', borderColor: voted ? '#2563eb' : '#e2e8f0' }}>
+            <button onClick={handleVote} style={{ ...s.voteBtn, color: voted ? '#2563eb' : 'var(--c-text-3)', borderColor: voted ? '#2563eb' : 'var(--c-border)' }}>
               <ThumbsUp size={12} strokeWidth={2} />
               {votos}
             </button>
@@ -103,21 +107,21 @@ const ReportCard = ({ report }) => {
 };
 
 const s = {
-  card:           { background: '#fff', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.07)', display: 'flex', flexDirection: 'column', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" },
+  card:           { background: 'var(--c-surface)', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 12px var(--c-shadow)', display: 'flex', flexDirection: 'column', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" },
   imgWrap:        { width: '100%', height: '220px', overflow: 'hidden', flexShrink: 0 },
   img:            { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
-  imgPlaceholder: { width: '100%', height: '100%', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  imgPlaceholder: { width: '100%', height: '100%', background: 'var(--c-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' },
   body:           { padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: '10px' },
   titleRow:       { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' },
-  title:          { margin: 0, fontSize: '17px', fontWeight: '700', color: '#0f172a', lineHeight: '1.3' },
+  title:          { margin: 0, fontSize: '17px', fontWeight: '700', color: 'var(--c-text)', lineHeight: '1.3' },
   badge:          { fontSize: '11px', fontWeight: '700', padding: '3px 10px', borderRadius: '20px', whiteSpace: 'nowrap', flexShrink: 0, textTransform: 'uppercase', letterSpacing: '0.4px' },
-  desc:           { margin: 0, fontSize: '14px', color: '#64748b', lineHeight: '1.6', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' },
+  desc:           { margin: 0, fontSize: '14px', color: 'var(--c-text-2)', lineHeight: '1.6', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' },
   categoria:      { fontSize: '12px', fontWeight: '600', color: '#7c3aed', background: '#ede9fe', padding: '3px 10px', borderRadius: '20px', alignSelf: 'flex-start' },
   footer:         { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '4px' },
   metaGroup:      { display: 'flex', flexDirection: 'column', gap: '4px' },
-  metaItem:       { display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: '#94a3b8' },
+  metaItem:       { display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: 'var(--c-text-3)' },
   link:           { fontSize: '13px', fontWeight: '600', color: '#2563eb', textDecoration: 'none', whiteSpace: 'nowrap' },
-  voteBtn:        { display: 'flex', alignItems: 'center', gap: '4px', background: 'none', border: '1px solid #e2e8f0', borderRadius: '20px', padding: '3px 10px', cursor: 'pointer', fontSize: '12px', fontWeight: '600', fontFamily: 'inherit' },
+  voteBtn:        { display: 'flex', alignItems: 'center', gap: '4px', background: 'none', border: '1px solid var(--c-border)', borderRadius: '20px', padding: '3px 10px', cursor: 'pointer', fontSize: '12px', fontWeight: '600', fontFamily: 'inherit' },
 };
 
 export default ReportCard;

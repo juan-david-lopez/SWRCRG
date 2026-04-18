@@ -12,6 +12,9 @@ import ReportsListPage   from '../pages/reports/ReportsListPage';
 import ReportDetailPage  from '../pages/reports/ReportDetailPage';
 import MyReportsPage     from '../pages/reports/MyReportsPage';
 import AdminReportsPage  from '../pages/admin/AdminReportsPage';
+import PrivacidadPage    from '../pages/legal/PrivacidadPage';
+import TerminosPage      from '../pages/legal/TerminosPage';
+import CookiesPage       from '../pages/legal/CookiesPage';
 import ProtectedRoute    from './ProtectedRoute';
 import AdminRoute        from './AdminRoute';
 
@@ -26,6 +29,9 @@ const AppRouter = () => (
         <Route path="/reports"     element={<ReportsListPage />} />
         <Route path="/reports/:id" element={<ReportDetailPage />} />
         <Route path="/mapa"        element={<MapPage />} />
+        <Route path="/privacidad"  element={<PrivacidadPage />} />
+        <Route path="/terminos"    element={<TerminosPage />} />
+        <Route path="/cookies"     element={<CookiesPage />} />
         <Route path="/acceso-denegado" element={<AccessDenied />} />
 
         <Route element={<ProtectedRoute />}>

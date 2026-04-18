@@ -14,8 +14,13 @@ const request = async (endpoint, options = {}) => {
 
   const data = await res.json();
 
-  // Sesión expirada — limpiar y redirigir al login
-  if (res.status === 401) {
+  // Solo tratar como sesión expirada si:
+  // 1. La respuesta es 401
+  // 2. Había un token activo (el usuario estaba autenticado)
+  // 3. No es una ruta de autenticación (login/register no deben disparar esto)
+  const isAuthRoute = endpoint.startsWith('/auth/login') || endpoint.startsWith('/auth/register');
+
+  if (res.status === 401 && token && !isAuthRoute) {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     window.dispatchEvent(new Event('session-expired'));

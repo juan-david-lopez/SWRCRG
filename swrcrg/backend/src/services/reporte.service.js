@@ -16,6 +16,7 @@ const listar = async () => {
       { model: Usuario,          as: 'usuario',   attributes: ['id', 'nombre', 'apellido'] },
       { model: EstadoReporte,    as: 'estado',    attributes: ['id', 'nombre'] },
       { model: CategoriaReporte, as: 'categoria', attributes: ['id', 'nombre'] },
+      { model: ImagenReporte,    as: 'imagenes',  attributes: ['id', 'url_imagen'], limit: 1 },
     ],
     order: [['fecha_reporte', 'DESC']],
   });
@@ -28,6 +29,7 @@ const listarPorCategoria = async (categoria_id) => {
       { model: Usuario,          as: 'usuario',   attributes: ['id', 'nombre', 'apellido'] },
       { model: EstadoReporte,    as: 'estado',    attributes: ['id', 'nombre'] },
       { model: CategoriaReporte, as: 'categoria', attributes: ['id', 'nombre'] },
+      { model: ImagenReporte,    as: 'imagenes',  attributes: ['id', 'url_imagen'], limit: 1 },
     ],
     order: [['fecha_reporte', 'DESC']],
   });
@@ -50,6 +52,7 @@ const obtenerPorUsuario = async (usuario_id) => {
     include: [
       { model: EstadoReporte,    as: 'estado',    attributes: ['id', 'nombre'] },
       { model: CategoriaReporte, as: 'categoria', attributes: ['id', 'nombre'] },
+      { model: ImagenReporte,    as: 'imagenes',  attributes: ['id', 'url_imagen'], limit: 1 },
     ],
     order: [['fecha_reporte', 'DESC']],
   });

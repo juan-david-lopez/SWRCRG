@@ -14,10 +14,10 @@ const NotFound = () => {
 };
 
 const s = {
-  page:  { minHeight: '100vh', background: '#f1f5f9', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', padding: '32px 24px', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" },
+  page:  { minHeight: '100vh', background: 'var(--c-bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', padding: '32px 24px', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" },
   code:  { fontSize: '96px', fontWeight: '800', color: '#2563eb', lineHeight: 1 },
-  title: { fontSize: '28px', fontWeight: '700', color: '#0f172a', margin: 0 },
-  desc:  { fontSize: '16px', color: '#94a3b8', margin: 0 },
+  title: { fontSize: '28px', fontWeight: '700', color: 'var(--c-text)', margin: 0 },
+  desc:  { fontSize: '16px', color: 'var(--c-text-3)', margin: 0 },
   btn:   { marginTop: '12px', padding: '13px 48px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '15px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit' },
 };
 

@@ -29,7 +29,7 @@ const loginUser = async (req, res) => {
   }
 
   try {
-    const result = await login({ correo, contrasena });
+    const result = await login({ correo: correo.trim().toLowerCase(), contrasena });
     return res.status(200).json(result);
   } catch (err) {
     return res.status(err.status || 500).json({ error: err.message });

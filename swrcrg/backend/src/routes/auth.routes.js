@@ -25,7 +25,7 @@ const validarRegistro = [
     .trim()
     .notEmpty().withMessage('El correo es obligatorio')
     .isEmail().withMessage('Formato de correo inválido')
-    .normalizeEmail(),
+    .toLowerCase(),
 
   body('contrasena')
     .notEmpty().withMessage('La contraseña es obligatoria')

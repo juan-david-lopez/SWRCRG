@@ -8,6 +8,8 @@ import { RowSkeleton } from '../../components/Skeleton';
 import ConfirmModal from '../../components/ConfirmModal';
 import { toast } from '../../components/Toast';
 
+const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3000';
+
 const formatDate = (iso) =>
   new Date(iso).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
 
@@ -17,7 +19,8 @@ const STATUS_LABEL = { pendiente: 'Pendiente', en_proceso: 'En proceso', resuelt
 const MyReportCard = ({ report, onEdit, onDelete }) => {
   const estado = report.estado?.nombre ?? '';
   const badge  = STATUS_COLORS[estado] || {};
-  const img    = report.imagenes?.[0]?.url_imagen;
+  const rawImg = report.imagenes?.[0]?.url_imagen;
+  const img    = rawImg ? `${API_BASE}${rawImg}` : null;
   const dir    = report.direccion_referencia;
   const canEdit = estado === 'pendiente';
 
@@ -26,7 +29,7 @@ const MyReportCard = ({ report, onEdit, onDelete }) => {
       <div style={s.thumb}>
         {img
           ? <img src={img} alt={report.titulo} style={s.thumbImg} />
-          : <div style={s.thumbPlaceholder}><ImageOff size={24} strokeWidth={1.2} color="#94a3b8" /></div>
+          : <div style={s.thumbPlaceholder}><ImageOff size={24} strokeWidth={1.2} color="var(--c-text-3)" /></div>
         }
       </div>
       <div style={s.cardBody}>
@@ -36,7 +39,7 @@ const MyReportCard = ({ report, onEdit, onDelete }) => {
             {estado && <span style={{ ...s.badge, ...badge }}>{STATUS_LABEL[estado] ?? estado}</span>}
             {canEdit && (
               <button onClick={() => onEdit(report)} style={s.iconActionBtn} title="Editar">
-                <Pencil size={13} strokeWidth={2} color="#64748b" />
+                <Pencil size={13} strokeWidth={2} color="var(--c-text-2)" />
               </button>
             )}
             <button onClick={() => onDelete(report)} style={s.iconActionBtn} title="Eliminar">
@@ -51,10 +54,10 @@ const MyReportCard = ({ report, onEdit, onDelete }) => {
         <div style={s.cardFooter}>
           <div style={s.metaRow}>
             {dir && (
-              <span style={s.metaItem}><MapPin size={12} strokeWidth={2} color="#94a3b8" />{dir}</span>
+              <span style={s.metaItem}><MapPin size={12} strokeWidth={2} color="var(--c-text-3)" />{dir}</span>
             )}
             <span style={s.metaItem}>
-              <Calendar size={12} strokeWidth={2} color="#94a3b8" />
+              <Calendar size={12} strokeWidth={2} color="var(--c-text-3)" />
               {formatDate(report.fecha_reporte ?? report.created_at)}
             </span>
           </div>
@@ -116,7 +119,7 @@ const EditModal = ({ report, onSave, onCancel }) => {
 const EmptyState = ({ onCreateClick }) => (
   <div style={s.emptyWrap}>
     <div style={s.emptyCard}>
-      <div style={s.emptyIcon}><Flag size={28} strokeWidth={2} color="#1e293b" /></div>
+      <div style={s.emptyIcon}><Flag size={28} strokeWidth={2} color="var(--c-text)" /></div>
       <h3 style={s.emptyTitle}>Sin reportes aún</h3>
       <p style={s.emptyDesc}>No has creado ningún reporte todavía.</p>
       <button onClick={onCreateClick} style={s.emptyBtn}>
@@ -228,62 +231,62 @@ const MyReportsPage = () => {
 };
 
 const NavItem = ({ icon, label, onClick, active }) => (
-  <button onClick={onClick} style={{ ...s.navItem, background: active ? '#eff6ff' : 'transparent' }}>
-    <span style={{ color: active ? '#2563eb' : '#64748b' }}>{icon}</span>
-    <span style={{ ...s.navLabel, color: active ? '#2563eb' : '#64748b', fontWeight: active ? '700' : '500' }}>{label}</span>
+  <button onClick={onClick} style={{ ...s.navItem, background: active ? 'var(--c-primary-bg)' : 'transparent' }}>
+    <span style={{ color: active ? '#2563eb' : 'var(--c-text-2)' }}>{icon}</span>
+    <span style={{ ...s.navLabel, color: active ? '#2563eb' : 'var(--c-text-2)', fontWeight: active ? '700' : '500' }}>{label}</span>
   </button>
 );
 
 const s = {
-  page:        { minHeight: '100vh', background: '#f1f5f9', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", display: 'flex', flexDirection: 'column' },
-  topBar:      { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 24px', background: '#fff', borderBottom: '1px solid #e2e8f0', flexShrink: 0 },
-  topTitle:    { fontSize: '17px', fontWeight: '700', color: '#0f172a' },
+  page:        { minHeight: '100vh', background: 'var(--c-bg)', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", display: 'flex', flexDirection: 'column' },
+  topBar:      { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 24px', background: 'var(--c-surface)', borderBottom: '1px solid var(--c-border)', flexShrink: 0 },
+  topTitle:    { fontSize: '17px', fontWeight: '700', color: 'var(--c-text)' },
   topRight:    { display: 'flex', alignItems: 'center', gap: '12px' },
   avatar:      { width: '34px', height: '34px', borderRadius: '50%', background: '#2563eb', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '700' },
   logoutBtn:   { display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#ef4444' },
   content:     { flex: 1, maxWidth: '720px', width: '100%', margin: '0 auto', padding: '28px 20px 100px' },
-  sectionTitle:{ fontSize: '20px', fontWeight: '700', color: '#0f172a', margin: '0 0 20px', display: 'flex', alignItems: 'center', gap: '10px' },
-  count:       { fontSize: '13px', fontWeight: '600', background: '#f1f5f9', color: '#64748b', padding: '2px 10px', borderRadius: '20px' },
+  sectionTitle:{ fontSize: '20px', fontWeight: '700', color: 'var(--c-text)', margin: '0 0 20px', display: 'flex', alignItems: 'center', gap: '10px' },
+  count:       { fontSize: '13px', fontWeight: '600', background: 'var(--c-bg)', color: 'var(--c-text-2)', padding: '2px 10px', borderRadius: '20px' },
   list:        { display: 'flex', flexDirection: 'column', gap: '16px' },
-  center:      { textAlign: 'center', marginTop: '80px', color: '#94a3b8' },
-  card:        { background: '#fff', borderRadius: '12px', display: 'flex', overflow: 'hidden', boxShadow: '0 2px 10px rgba(0,0,0,0.06)' },
+  center:      { textAlign: 'center', marginTop: '80px', color: 'var(--c-text-3)' },
+  card:        { background: 'var(--c-surface)', borderRadius: '12px', display: 'flex', overflow: 'hidden', boxShadow: '0 2px 12px var(--c-shadow)' },
   thumb:       { width: '140px', flexShrink: 0 },
   thumbImg:    { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
-  thumbPlaceholder: { width: '100%', height: '100%', minHeight: '120px', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  thumbPlaceholder: { width: '100%', height: '100%', minHeight: '120px', background: 'var(--c-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' },
   cardBody:    { flex: 1, padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: '8px' },
   cardTop:     { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' },
-  cardTitle:   { margin: 0, fontSize: '16px', fontWeight: '700', color: '#0f172a', lineHeight: '1.3' },
+  cardTitle:   { margin: 0, fontSize: '16px', fontWeight: '700', color: 'var(--c-text)', lineHeight: '1.3' },
   badge:       { fontSize: '11px', fontWeight: '700', padding: '3px 10px', borderRadius: '20px', whiteSpace: 'nowrap', flexShrink: 0, textTransform: 'uppercase', letterSpacing: '0.4px' },
   iconActionBtn: { background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '4px', borderRadius: '6px' },
-  cardDesc:    { margin: 0, fontSize: '13px', color: '#64748b', lineHeight: '1.5', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' },
+  cardDesc:    { margin: 0, fontSize: '13px', color: 'var(--c-text-2)', lineHeight: '1.5', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' },
   categoria:   { fontSize: '12px', fontWeight: '600', color: '#7c3aed', background: '#ede9fe', padding: '3px 10px', borderRadius: '20px', alignSelf: 'flex-start' },
   cardFooter:  { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '4px' },
   metaRow:     { display: 'flex', flexDirection: 'column', gap: '3px' },
-  metaItem:    { display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: '#94a3b8' },
+  metaItem:    { display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: 'var(--c-text-3)' },
   detailLink:  { fontSize: '13px', fontWeight: '700', color: '#2563eb', textDecoration: 'none', whiteSpace: 'nowrap' },
   emptyWrap:   { display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' },
-  emptyCard:   { background: '#fff', borderRadius: '20px', padding: '48px 40px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', maxWidth: '360px', width: '100%', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' },
-  emptyIcon:   { width: '64px', height: '64px', borderRadius: '50%', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '4px' },
-  emptyTitle:  { fontSize: '20px', fontWeight: '700', color: '#0f172a', margin: 0 },
-  emptyDesc:   { fontSize: '14px', color: '#64748b', margin: 0, textAlign: 'center' },
+  emptyCard:   { background: 'var(--c-surface)', borderRadius: '20px', padding: '48px 40px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', maxWidth: '360px', width: '100%', boxShadow: '0 4px 24px var(--c-shadow)' },
+  emptyIcon:   { width: '64px', height: '64px', borderRadius: '50%', background: 'var(--c-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '4px' },
+  emptyTitle:  { fontSize: '20px', fontWeight: '700', color: 'var(--c-text)', margin: 0 },
+  emptyDesc:   { fontSize: '14px', color: 'var(--c-text-2)', margin: 0, textAlign: 'center' },
   emptyBtn:    { display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', padding: '13px 32px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '15px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit' },
-  bottomNav:   { position: 'fixed', bottom: 0, left: 0, right: 0, background: '#fff', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-around', padding: '8px 0 12px', zIndex: 100 },
+  bottomNav:   { position: 'fixed', bottom: 0, left: 0, right: 0, background: 'var(--c-surface)', borderTop: '1px solid var(--c-border)', display: 'flex', justifyContent: 'space-around', padding: '8px 0 12px', zIndex: 100 },
   navItem:     { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', border: 'none', cursor: 'pointer', padding: '6px 20px', borderRadius: '10px' },
   navLabel:    { fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' },
 };
 
 const em = {
   overlay:   { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" },
-  modal:     { background: '#fff', borderRadius: '16px', padding: '24px', maxWidth: '480px', width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column', gap: '14px' },
+  modal:     { background: 'var(--c-surface)', borderRadius: '16px', padding: '24px', maxWidth: '480px', width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column', gap: '14px' },
   header:    { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  title:     { margin: 0, fontSize: '17px', fontWeight: '700', color: '#0f172a' },
-  closeBtn:  { background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#64748b', padding: '4px' },
+  title:     { margin: 0, fontSize: '17px', fontWeight: '700', color: 'var(--c-text)' },
+  closeBtn:  { background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', color: 'var(--c-text-2)', padding: '4px' },
   field:     { display: 'flex', flexDirection: 'column', gap: '6px' },
-  label:     { fontSize: '13px', fontWeight: '600', color: '#0f172a' },
-  opt:       { fontWeight: '400', color: '#94a3b8' },
-  input:     { border: '1px solid #e2e8f0', borderRadius: '8px', padding: '10px 14px', fontSize: '14px', fontFamily: 'inherit', color: '#0f172a', outline: 'none', resize: 'vertical' },
+  label:     { fontSize: '13px', fontWeight: '600', color: 'var(--c-text)' },
+  opt:       { fontWeight: '400', color: 'var(--c-text-3)' },
+  input:     { border: '1px solid var(--c-border)', borderRadius: '8px', padding: '10px 14px', fontSize: '14px', fontFamily: 'inherit', color: 'var(--c-text)', outline: 'none', resize: 'vertical' },
   actions:   { display: 'flex', gap: '10px', marginTop: '4px' },
-  cancelBtn: { flex: 1, padding: '11px', borderRadius: '8px', border: '1px solid #e2e8f0', background: '#fff', fontSize: '14px', fontWeight: '600', color: '#64748b', cursor: 'pointer', fontFamily: 'inherit' },
+  cancelBtn: { flex: 1, padding: '11px', borderRadius: '8px', border: '1px solid var(--c-border)', background: 'var(--c-surface)', fontSize: '14px', fontWeight: '600', color: 'var(--c-text-2)', cursor: 'pointer', fontFamily: 'inherit' },
   saveBtn:   { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '8px', border: 'none', background: '#2563eb', fontSize: '14px', fontWeight: '600', color: '#fff', cursor: 'pointer', fontFamily: 'inherit' },
 };
 
