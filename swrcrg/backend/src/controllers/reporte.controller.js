@@ -79,4 +79,37 @@ const eliminar = handle(async (req, res) => {
   res.json({ message: 'Reporte eliminado' });
 });
 
-module.exports = { crear, listar, listarPorCategoria, obtener, misReportes, cambiarEstado, subirImagen, eliminarImagen, editar, eliminar };
+const votar = handle(async (req, res) => {
+  const { votos, voted } = await reporteService.votar(req.params.id, req.user.id);
+  res.json({ votos, voted });
+});
+
+const cercanos = handle(async (req, res) => {
+  const { lat, lng, radio = 0.5 } = req.query;
+  if (!lat || !lng) return res.status(400).json({ error: 'lat y lng son requeridos' });
+  const reportes = await reporteService.buscarCercanos(parseFloat(lat), parseFloat(lng), parseFloat(radio));
+  res.json({ reportes });
+});
+
+const exportarCSV = handle(async (req, res) => {
+  const reportes = await reporteService.listar();
+  const header = ['ID', 'Título', 'Descripción', 'Estado', 'Categoría', 'Dirección', 'Latitud', 'Longitud', 'Usuario', 'Fecha'];
+  const rows = reportes.map((r) => [
+    r.id,
+    `"${(r.titulo || '').replace(/"/g, '""')}"`,
+    `"${(r.descripcion || '').replace(/"/g, '""')}"`,
+    r.estado?.nombre || '',
+    r.categoria?.nombre || '',
+    `"${(r.direccion_referencia || '').replace(/"/g, '""')}"`,
+    r.latitud,
+    r.longitud,
+    `"${r.usuario ? `${r.usuario.nombre} ${r.usuario.apellido}` : ''}"`,
+    r.fecha_reporte ? new Date(r.fecha_reporte).toISOString().split('T')[0] : '',
+  ].join(','));
+  const csv = [header.join(','), ...rows].join('\n');
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="reportes-${Date.now()}.csv"`);
+  res.send('\uFEFF' + csv); // BOM para Excel
+});
+
+module.exports = { crear, listar, listarPorCategoria, obtener, misReportes, cambiarEstado, subirImagen, eliminarImagen, editar, eliminar, votar, cercanos, exportarCSV };

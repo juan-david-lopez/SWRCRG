@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Paperclip, FileImage, Send, X } from 'lucide-react';
+import { ArrowLeft, Paperclip, Send, X, AlertTriangle } from 'lucide-react';
 import MapPicker from '../../components/MapPicker';
-import { createReportForm } from '../../services/report.service';
+import { createReportForm, uploadReportImage, getNearbyReports } from '../../services/report.service';
 import { get } from '../../services/api';
 import { toast } from '../../components/Toast';
 
@@ -26,6 +26,7 @@ const CreateReportPage = () => {
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState('');
   const [coordErr, setCoordErr] = useState(false);
+  const [nearby, setNearby]     = useState([]);
 
   useEffect(() => {
     get('/categorias')
@@ -34,7 +35,14 @@ const CreateReportPage = () => {
   }, []);
 
   const handleChange    = (e) => { setForm({ ...form, [e.target.name]: e.target.value }); setError(''); };
-  const handleMapSelect = ({ lat, lng }) => { setCoords({ lat, lng }); setCoordErr(false); };
+  const handleMapSelect = ({ lat, lng }) => {
+    setCoords({ lat, lng });
+    setCoordErr(false);
+    // Buscar reportes cercanos (500m)
+    getNearbyReports(lat, lng, 0.5)
+      .then(({ reportes }) => setNearby(reportes ?? []))
+      .catch(() => {});
+  };
   const handleFile      = (e) => {
     const files = Array.from(e.target.files);
     setImages((prev) => [...prev, ...files].slice(0, 5)); // max 5
@@ -143,6 +151,19 @@ const CreateReportPage = () => {
                 Selecciona una ubicación en el mapa
               </span>
             )}
+            {nearby.length > 0 && (
+              <div style={s.nearbyWarn}>
+                <AlertTriangle size={15} strokeWidth={2} color="#f59e0b" style={{ flexShrink: 0 }} />
+                <div>
+                  <p style={{ margin: '0 0 4px', fontSize: '13px', fontWeight: '600', color: '#92400e' }}>
+                    Hay {nearby.length} reporte(s) cercano(s) en esta zona
+                  </p>
+                  <p style={{ margin: 0, fontSize: '12px', color: '#92400e' }}>
+                    Verifica que no sea un duplicado antes de continuar.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Imagen */}
@@ -202,6 +223,7 @@ const s = {
   mapSection: { padding: '16px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '10px' },
   mapLabel:   { fontSize: '11px', fontWeight: '700', color: '#0f172a', letterSpacing: '1px', margin: 0 },
   coordErr:   { display: 'flex', alignItems: 'center', fontSize: '12px', color: '#ef4444', fontWeight: '500' },
+  nearbyWarn: { display: 'flex', alignItems: 'flex-start', gap: '10px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '12px' },
 
   /* imagen */
   fileSection:{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '8px' },

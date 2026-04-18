@@ -1,68 +1,109 @@
+import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LogOut } from 'lucide-react';
+import { LogOut, Moon, Sun, Menu, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import NotificacionBell from './NotificacionBell';
 
 const Navbar = () => {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user, logout }  = useAuth();
+  const { dark, toggle }  = useTheme();
+  const navigate          = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
+  const handleLogout = () => { logout(); navigate('/login'); setMenuOpen(false); };
+  const close = () => setMenuOpen(false);
+
+  const bg     = dark ? 'var(--c-nav-bg)' : '#fff';
+  const border = dark ? '1px solid var(--c-border)' : '1px solid #e5e7eb';
+  const color  = dark ? 'var(--c-text)'   : '#333';
+  const activeColor = dark ? '#60a5fa' : '#2563eb';
+
+  const navStyle = ({ isActive }) => ({
+    textDecoration: 'none',
+    color: isActive ? activeColor : color,
+    fontWeight: isActive ? 600 : 400,
+    fontSize: '14px',
+  });
+
+  const links = (
+    <>
+      <NavLink to="/"       style={navStyle} onClick={close}>Inicio</NavLink>
+      <NavLink to="/reports" style={navStyle} onClick={close}>Reportes</NavLink>
+      <NavLink to="/mapa"   style={navStyle} onClick={close}>Mapa</NavLink>
+      {user && <NavLink to="/reports/create" style={navStyle} onClick={close}>Crear reporte</NavLink>}
+      {user && <NavLink to="/mis-reportes"   style={navStyle} onClick={close}>Mis reportes</NavLink>}
+      {user?.rol === 'administrador' && (
+        <NavLink to="/admin/reports" style={navStyle} onClick={close}>Panel admin</NavLink>
+      )}
+    </>
+  );
 
   return (
-    <nav style={styles.nav}>
-      <div style={styles.left}>
-        <NavLink to="/" style={styles.brand}>SWRCRG</NavLink>
-        <NavLink to="/" style={navStyle}>Inicio</NavLink>
-        <NavLink to="/reports" style={navStyle}>Reportes</NavLink>
-        <NavLink to="/mapa" style={navStyle}>Mapa</NavLink>
-        {user && <NavLink to="/reports/create" style={navStyle}>Crear reporte</NavLink>}
-        {user && <NavLink to="/mis-reportes" style={navStyle}>Mis reportes</NavLink>}
-        {user?.rol === 'administrador' && (
-          <NavLink to="/admin/reports" style={navStyle}>Panel admin</NavLink>
-        )}
+    <nav style={{ background: bg, borderBottom: border, width: '100%', boxSizing: 'border-box', position: 'relative', zIndex: 200 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 24px' }}>
+        {/* Brand */}
+        <NavLink to="/" style={{ textDecoration: 'none', color: dark ? '#f1f5f9' : '#0f172a', fontWeight: '700', fontSize: '16px' }}>
+          SWRCRG
+        </NavLink>
+
+        {/* Desktop links */}
+        <div className="hide-mobile" style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+          {links}
+        </div>
+
+        {/* Right actions */}
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          {/* Dark mode toggle */}
+          <button onClick={toggle} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '4px', color: dark ? '#f1f5f9' : '#64748b' }} title={dark ? 'Modo claro' : 'Modo oscuro'}>
+            {dark ? <Sun size={18} strokeWidth={1.8} /> : <Moon size={18} strokeWidth={1.8} />}
+          </button>
+
+          {user ? (
+            <>
+              <NotificacionBell />
+              <NavLink to="/perfil" style={navStyle} title="Mi perfil" className="hide-mobile">
+                <span style={{ fontSize: '14px', color: dark ? 'var(--c-text-2)' : '#555' }}>{user.nombre} {user.apellido}</span>
+              </NavLink>
+              <button onClick={handleLogout} className="hide-mobile" style={{ padding: '6px 12px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <LogOut size={13} strokeWidth={2} /> Salir
+              </button>
+            </>
+          ) : (
+            <div className="hide-mobile" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <NavLink to="/login"    style={navStyle}>Iniciar sesión</NavLink>
+              <NavLink to="/register" style={() => ({ textDecoration: 'none', color: '#fff', background: '#2563eb', padding: '7px 14px', borderRadius: '6px', fontSize: '14px', fontWeight: '600' })}>Registrarse</NavLink>
+            </div>
+          )}
+
+          {/* Hamburger */}
+          <button className="hide-desktop" onClick={() => setMenuOpen((o) => !o)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', color: dark ? '#f1f5f9' : '#0f172a', padding: '4px' }}>
+            {menuOpen ? <X size={22} strokeWidth={2} /> : <Menu size={22} strokeWidth={2} />}
+          </button>
+        </div>
       </div>
 
-      <div style={styles.right}>
-        {user ? (
-          <>
-            <NotificacionBell />
-            <NavLink to="/perfil" style={navStyle} title="Mi perfil">
-              <span style={styles.username}>{user.nombre} {user.apellido}</span>
-            </NavLink>
-            <button onClick={handleLogout} style={styles.btn}>
-              <LogOut size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
-              Cerrar sesión
-            </button>
-          </>
-        ) : (
-          <>
-            <NavLink to="/login"    style={navStyle}>Iniciar sesión</NavLink>
-            <NavLink to="/register" style={() => ({ textDecoration: 'none', color: '#fff', background: '#2563eb', padding: '7px 16px', borderRadius: '6px', fontSize: '14px', fontWeight: '600' })}>Registrarse</NavLink>
-          </>
-        )}
-      </div>
+      {/* Mobile menu */}
+      {menuOpen && (
+        <div className="hide-desktop" style={{ background: bg, borderTop: border, padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {links}
+          {user ? (
+            <>
+              <NavLink to="/perfil" style={navStyle} onClick={close}>{user.nombre} {user.apellido} — Perfil</NavLink>
+              <button onClick={handleLogout} style={{ padding: '10px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '600', textAlign: 'left' }}>
+                Cerrar sesión
+              </button>
+            </>
+          ) : (
+            <>
+              <NavLink to="/login"    style={navStyle} onClick={close}>Iniciar sesión</NavLink>
+              <NavLink to="/register" onClick={close} style={() => ({ textDecoration: 'none', color: '#fff', background: '#2563eb', padding: '10px 14px', borderRadius: '8px', fontSize: '14px', fontWeight: '600', display: 'block', textAlign: 'center' })}>Registrarse</NavLink>
+            </>
+          )}
+        </div>
+      )}
     </nav>
   );
-};
-
-const navStyle = ({ isActive }) => ({
-  textDecoration: 'none',
-  color: isActive ? '#2563eb' : '#333',
-  fontWeight: isActive ? 600 : 400,
-  fontSize: '14px',
-});
-
-const styles = {
-  nav:      { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 32px', background: '#fff', borderBottom: '1px solid #e5e7eb', flexWrap: 'wrap', gap: '12px', width: '100%', boxSizing: 'border-box' },
-  left:     { display: 'flex', gap: '20px', alignItems: 'center' },
-  right:    { display: 'flex', gap: '16px', alignItems: 'center' },
-  username: { fontSize: '14px', color: '#555' },
-  btn:      { padding: '6px 12px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '13px' },
-  brand:    { textDecoration: 'none', color: '#0f172a', fontWeight: '700', fontSize: '16px', marginRight: '8px' },
 };
 
 export default Navbar;

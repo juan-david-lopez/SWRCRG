@@ -41,3 +41,21 @@ export const uploadReportImage = (id, formData) => {
     return data;
   });
 };
+
+export const voteReport         = (id)           => post(`/reportes/${id}/votar`, {});
+export const getNearbyReports   = (lat, lng, radio = 0.5) => get(`/reportes/cercanos?lat=${lat}&lng=${lng}&radio=${radio}`);
+export const exportReportsCSV   = () => {
+  const token = localStorage.getItem('token');
+  return fetch(`${BASE_URL}/reportes/exportar/csv`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  }).then(async (res) => {
+    if (!res.ok) throw new Error('Error al exportar');
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `reportes-${Date.now()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+};

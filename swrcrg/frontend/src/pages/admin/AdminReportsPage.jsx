@@ -1,9 +1,9 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getReports, updateReportStatus } from '../../services/report.service';
+import { getReports, updateReportStatus, exportReportsCSV } from '../../services/report.service';
 import { getUsuarios, toggleUsuarioActivo, changeUsuarioRol } from '../../services/auth.service';
 import { REPORT_STATUSES, STATUS_COLORS } from '../../constants/reportStatus';
-import { MapPin, Calendar, User, ChevronDown, Search, X, BarChart2, Users, FileText, CheckCircle } from 'lucide-react';
+import { MapPin, Calendar, User, ChevronDown, Search, X, BarChart2, Users, FileText, CheckCircle, Download } from 'lucide-react';
 import { RowSkeleton } from '../../components/Skeleton';
 import ConfirmModal from '../../components/ConfirmModal';
 import { toast } from '../../components/Toast';
@@ -26,7 +26,7 @@ const StatCard = ({ icon: Icon, label, value, color }) => (
 
 const AdminReportsPage = () => {
   const navigate = useNavigate();
-  const [tab, setTab]                   = useState('reports'); // 'reports' | 'users'
+  const [tab, setTab]                   = useState('reports'); // 'reports' | 'users' | 'stats'
   const [reports, setReports]           = useState([]);
   const [usuarios, setUsuarios]         = useState([]);
   const [loadingR, setLoadingR]         = useState(true);
@@ -35,7 +35,9 @@ const AdminReportsPage = () => {
   const [observaciones, setObservaciones] = useState({});
   const [search, setSearch]             = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  const [searchUsers, setSearchUsers]   = useState('');
   const [confirmToggle, setConfirmToggle] = useState(null);
+  const [exporting, setExporting]       = useState(false);
 
   useEffect(() => {
     getReports()
@@ -90,11 +92,34 @@ const AdminReportsPage = () => {
     }
   };
 
+  const handleExportCSV = async () => {
+    setExporting(true);
+    try {
+      await exportReportsCSV();
+      toast.success('CSV descargado');
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   // Stats
-  const total     = reports.length;
+  const total      = reports.length;
   const pendientes = reports.filter((r) => r.estado?.nombre === 'pendiente').length;
   const enProceso  = reports.filter((r) => r.estado?.nombre === 'en_proceso').length;
   const resueltos  = reports.filter((r) => r.estado?.nombre === 'resuelto').length;
+
+  // Stats por categoría
+  const catStats = useMemo(() => {
+    const map = {};
+    reports.forEach((r) => {
+      const nombre = r.categoria?.nombre?.replace(/_/g, ' ') || 'Sin categoría';
+      map[nombre] = (map[nombre] || 0) + 1;
+    });
+    return Object.entries(map).sort((a, b) => b[1] - a[1]);
+  }, [reports]);
+  const maxCat = catStats[0]?.[1] || 1;
 
   // Filtered reports
   const filtered = useMemo(() => reports.filter((r) => {
@@ -103,6 +128,17 @@ const AdminReportsPage = () => {
     const matchStatus = !filterStatus || r.estado?.nombre === filterStatus;
     return matchSearch && matchStatus;
   }), [reports, search, filterStatus]);
+
+  // Filtered users
+  const filteredUsers = useMemo(() => {
+    const q = searchUsers.toLowerCase();
+    if (!q) return usuarios;
+    return usuarios.filter((u) =>
+      u.nombre?.toLowerCase().includes(q) ||
+      u.apellido?.toLowerCase().includes(q) ||
+      u.correo?.toLowerCase().includes(q)
+    );
+  }, [usuarios, searchUsers]);
 
   return (
     <div style={s.page}>
@@ -121,14 +157,61 @@ const AdminReportsPage = () => {
         </div>
 
         {/* Tabs */}
-        <div style={s.tabs}>
-          <button onClick={() => setTab('reports')} style={{ ...s.tab, ...(tab === 'reports' ? s.tabActive : {}) }}>
-            <FileText size={15} strokeWidth={2} /> Reportes
-          </button>
-          <button onClick={() => setTab('users')} style={{ ...s.tab, ...(tab === 'users' ? s.tabActive : {}) }}>
-            <Users size={15} strokeWidth={2} /> Usuarios
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+          <div style={s.tabs}>
+            <button onClick={() => setTab('reports')} style={{ ...s.tab, ...(tab === 'reports' ? s.tabActive : {}) }}>
+              <FileText size={15} strokeWidth={2} /> Reportes
+            </button>
+            <button onClick={() => setTab('stats')} style={{ ...s.tab, ...(tab === 'stats' ? s.tabActive : {}) }}>
+              <BarChart2 size={15} strokeWidth={2} /> Estadísticas
+            </button>
+            <button onClick={() => setTab('users')} style={{ ...s.tab, ...(tab === 'users' ? s.tabActive : {}) }}>
+              <Users size={15} strokeWidth={2} /> Usuarios
+            </button>
+          </div>
+          <button onClick={handleExportCSV} disabled={exporting} style={s.exportBtn}>
+            <Download size={14} strokeWidth={2} />
+            {exporting ? 'Exportando...' : 'Exportar CSV'}
           </button>
         </div>
+
+        {/* ── STATS TAB ── */}
+        {tab === 'stats' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div style={s.card}>
+              <h3 style={{ margin: '0 0 20px', fontSize: '16px', fontWeight: '700', color: '#0f172a' }}>Reportes por categoría</h3>
+              {catStats.length === 0 ? (
+                <p style={s.empty}>Sin datos</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {catStats.map(([nombre, count]) => (
+                    <div key={nombre}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                        <span style={{ fontSize: '13px', fontWeight: '600', color: '#0f172a', textTransform: 'capitalize' }}>{nombre}</span>
+                        <span style={{ fontSize: '13px', color: '#64748b' }}>{count}</span>
+                      </div>
+                      <div style={{ height: '8px', background: '#f1f5f9', borderRadius: '4px', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${(count / maxCat) * 100}%`, background: '#2563eb', borderRadius: '4px', transition: 'width .4s ease' }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+              {[
+                { label: 'Tasa de resolución', value: total > 0 ? `${Math.round((resueltos / total) * 100)}%` : '—', color: '#16a34a' },
+                { label: 'Promedio por estado', value: total > 0 ? `${Math.round(total / 3)}` : '—', color: '#2563eb' },
+                { label: 'Categorías activas', value: catStats.length, color: '#7c3aed' },
+              ].map(({ label, value, color }) => (
+                <div key={label} style={{ ...s.card, textAlign: 'center' }}>
+                  <p style={{ fontSize: '32px', fontWeight: '800', color, margin: '0 0 4px' }}>{value}</p>
+                  <p style={{ fontSize: '13px', color: '#94a3b8', margin: 0 }}>{label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ── REPORTS TAB ── */}
         {tab === 'reports' && (
@@ -203,12 +286,19 @@ const AdminReportsPage = () => {
         {/* ── USERS TAB ── */}
         {tab === 'users' && (
           <>
-            <p style={s.resultsCount}>{usuarios.length} usuario(s) registrado(s)</p>
+            <div style={{ ...s.filters, marginBottom: '12px' }}>
+              <div style={s.searchWrap}>
+                <Search size={15} color="#94a3b8" style={{ flexShrink: 0 }} />
+                <input value={searchUsers} onChange={(e) => setSearchUsers(e.target.value)} placeholder="Buscar por nombre, apellido o correo..." style={s.searchInput} />
+                {searchUsers && <button onClick={() => setSearchUsers('')} style={s.clearBtn}><X size={13} color="#94a3b8" /></button>}
+              </div>
+            </div>
+            <p style={s.resultsCount}>{filteredUsers.length} usuario(s)</p>
             {loadingU ? (
               <div style={s.list}>{Array.from({ length: 4 }).map((_, i) => <RowSkeleton key={i} />)}</div>
             ) : (
               <div style={s.list}>
-                {usuarios.map((u) => (
+                {filteredUsers.map((u) => (
                   <div key={u.id} style={{ ...s.card, opacity: u.activo ? 1 : 0.6 }}>
                     <div style={s.userRow}>
                       <div style={s.userAvatar}>{u.nombre?.[0]}{u.apellido?.[0]}</div>
@@ -311,6 +401,7 @@ const s = {
   toggleBtn:    { padding: '7px 14px', borderRadius: '8px', border: 'none', fontSize: '13px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit' },
 
   empty:        { color: '#94a3b8', textAlign: 'center', marginTop: '40px', fontSize: '15px' },
+  exportBtn:    { display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px', borderRadius: '8px', border: '1px solid #e2e8f0', background: '#fff', fontSize: '13px', fontWeight: '600', color: '#0f172a', cursor: 'pointer', fontFamily: 'inherit' },
 };
 
 export default AdminReportsPage;

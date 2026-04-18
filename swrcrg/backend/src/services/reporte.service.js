@@ -121,4 +121,30 @@ const eliminar = async (id) => {
   await reporte.destroy();
 };
 
-module.exports = { crear, listar, listarPorCategoria, obtenerPorId, obtenerPorUsuario, cambiarEstado, agregarImagen, eliminarImagen, editar, eliminar };
+const votar = async (reporte_id, usuario_id) => {
+  const reporte = await Reporte.findByPk(reporte_id);
+  if (!reporte) throw Object.assign(new Error('Reporte no encontrado'), { status: 404 });
+  const votantes = reporte.votantes || [];
+  const yaVoto = votantes.includes(usuario_id);
+  const nuevosVotantes = yaVoto
+    ? votantes.filter((v) => v !== usuario_id)
+    : [...votantes, usuario_id];
+  await reporte.update({ votos: nuevosVotantes.length, votantes: nuevosVotantes });
+  return { votos: nuevosVotantes.length, voted: !yaVoto };
+};
+
+// Buscar reportes cercanos (radio en km, fórmula Haversine aproximada)
+const buscarCercanos = async (lat, lng, radioKm = 0.5) => {
+  const todos = await listar();
+  return todos.filter((r) => {
+    const dLat = (parseFloat(r.latitud)  - lat) * (Math.PI / 180);
+    const dLng = (parseFloat(r.longitud) - lng) * (Math.PI / 180);
+    const a = Math.sin(dLat / 2) ** 2 +
+              Math.cos(lat * Math.PI / 180) * Math.cos(parseFloat(r.latitud) * Math.PI / 180) *
+              Math.sin(dLng / 2) ** 2;
+    const distKm = 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return distKm <= radioKm;
+  });
+};
+
+module.exports = { crear, listar, listarPorCategoria, obtenerPorId, obtenerPorUsuario, cambiarEstado, agregarImagen, eliminarImagen, editar, eliminar, votar, buscarCercanos };

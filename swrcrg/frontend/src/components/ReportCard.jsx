@@ -1,6 +1,10 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, User, Calendar, ImageOff } from 'lucide-react';
+import { MapPin, User, Calendar, ImageOff, ThumbsUp } from 'lucide-react';
 import { STATUS_COLORS } from '../constants/reportStatus';
+import { voteReport } from '../services/report.service';
+import { useAuth } from '../context/AuthContext';
+import { toast } from './Toast';
 
 const formatDate = (iso) =>
   new Date(iso).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -8,6 +12,21 @@ const formatDate = (iso) =>
 const STATUS_LABEL = { pendiente: 'Pendiente', en_proceso: 'En proceso', resuelto: 'Resuelto' };
 
 const ReportCard = ({ report }) => {
+  const { user } = useAuth();
+  const [votos, setVotos]   = useState(report.votos ?? 0);
+  const [voted, setVoted]   = useState(report.voted ?? false);
+
+  const handleVote = async (e) => {
+    e.preventDefault();
+    if (!user) return toast.error('Debes iniciar sesión para votar');
+    try {
+      const res = await voteReport(report.id);
+      setVotos(res.votos);
+      setVoted(res.voted);
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
   const estadoNombre = report.estado?.nombre ?? report.status ?? '';
   const badge  = STATUS_COLORS[estadoNombre] || {};
   const autor  = report.usuario
@@ -70,7 +89,13 @@ const ReportCard = ({ report }) => {
               </span>
             )}
           </div>
-          <Link to={`/reports/${report.id}`} style={s.link}>Ver detalle →</Link>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button onClick={handleVote} style={{ ...s.voteBtn, color: voted ? '#2563eb' : '#94a3b8', borderColor: voted ? '#2563eb' : '#e2e8f0' }}>
+              <ThumbsUp size={12} strokeWidth={2} />
+              {votos}
+            </button>
+            <Link to={`/reports/${report.id}`} style={s.link}>Ver detalle →</Link>
+          </div>
         </div>
       </div>
     </div>
@@ -92,6 +117,7 @@ const s = {
   metaGroup:      { display: 'flex', flexDirection: 'column', gap: '4px' },
   metaItem:       { display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: '#94a3b8' },
   link:           { fontSize: '13px', fontWeight: '600', color: '#2563eb', textDecoration: 'none', whiteSpace: 'nowrap' },
+  voteBtn:        { display: 'flex', alignItems: 'center', gap: '4px', background: 'none', border: '1px solid #e2e8f0', borderRadius: '20px', padding: '3px 10px', cursor: 'pointer', fontSize: '12px', fontWeight: '600', fontFamily: 'inherit' },
 };
 
 export default ReportCard;

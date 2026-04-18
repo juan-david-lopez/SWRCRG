@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getReport, getReportHistory, getReportComments, addComment, deleteComment } from '../../services/report.service';
+import { getReport, getReportHistory, getReportComments, addComment, deleteComment, voteReport } from '../../services/report.service';
 import { STATUS_COLORS } from '../../constants/reportStatus';
 import { useAuth } from '../../context/AuthContext';
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
-import { Send, Trash2 } from 'lucide-react';
+import { Send, Trash2, ThumbsUp, Share2, Copy } from 'lucide-react';
 import { toast } from '../../components/Toast';
+import Lightbox from '../../components/Lightbox';
 
 const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3000';
 
@@ -27,6 +28,7 @@ const ReportDetailPage = () => {
   const [newComment,  setNewComment]  = useState('');
   const [sending,     setSending]     = useState(false);
   const [commentErr,  setCommentErr]  = useState('');
+  const [lightboxIdx, setLightboxIdx] = useState(null);
 
   useEffect(() => {
     Promise.all([
@@ -70,6 +72,31 @@ const ReportDetailPage = () => {
     }
   };
 
+  const handleVote = async () => {
+    if (!user) return toast.error('Debes iniciar sesión para votar');
+    try {
+      const { votos, voted } = await voteReport(id);
+      setReporte((prev) => ({ ...prev, votos, voted }));
+      toast.success(voted ? '¡Voto registrado!' : 'Voto retirado');
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+
+  const handleShare = async () => {
+    const url = window.location.href;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: reporte?.titulo, url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast.success('Enlace copiado al portapapeles');
+      }
+    } catch {
+      toast.error('No se pudo compartir');
+    }
+  };
+
   if (loading) return <p style={st.center}>Cargando...</p>;
   if (error)   return <p style={{ ...st.center, color: '#dc2626' }}>{error}</p>;
   if (!reporte) return null;
@@ -88,11 +115,20 @@ const ReportDetailPage = () => {
       <div style={st.card}>
         <div style={st.header}>
           <h2 style={st.cardTitle}>{reporte.titulo}</h2>
-          {estadoNombre && (
-            <span style={{ ...st.badge, ...badge }}>
-              {STATUS_LABEL[estadoNombre] ?? estadoNombre}
-            </span>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            {estadoNombre && (
+              <span style={{ ...st.badge, ...badge }}>
+                {STATUS_LABEL[estadoNombre] ?? estadoNombre}
+              </span>
+            )}
+            <button onClick={handleVote} style={{ ...st.actionBtn, color: reporte.voted ? '#2563eb' : '#94a3b8' }} title="Apoyar reporte">
+              <ThumbsUp size={15} strokeWidth={2} />
+              <span>{reporte.votos ?? 0}</span>
+            </button>
+            <button onClick={handleShare} style={st.actionBtn} title="Compartir">
+              <Share2 size={15} strokeWidth={2} />
+            </button>
+          </div>
         </div>
 
         {reporte.categoria && (
@@ -125,10 +161,14 @@ const ReportDetailPage = () => {
           <div>
             <p style={st.sectionLabel}>Imágenes</p>
             <div style={st.imgs}>
-              {reporte.imagenes.map((img) => (
-                <a key={img.id} href={`${API_BASE}${img.url_imagen}`} target="_blank" rel="noreferrer">
-                  <img src={`${API_BASE}${img.url_imagen}`} alt={img.nombre_archivo} style={st.thumb} />
-                </a>
+              {reporte.imagenes.map((img, idx) => (
+                <img
+                  key={img.id}
+                  src={`${API_BASE}${img.url_imagen}`}
+                  alt={img.nombre_archivo}
+                  style={{ ...st.thumb, cursor: 'zoom-in' }}
+                  onClick={() => setLightboxIdx(idx)}
+                />
               ))}
             </div>
           </div>
@@ -211,11 +251,21 @@ const ReportDetailPage = () => {
         )}
       </div>
     </div>
+
+    {/* Lightbox */}
+    {reporte.imagenes?.length > 0 && (
+      <Lightbox
+        images={reporte.imagenes.map((img) => `${API_BASE}${img.url_imagen}`)}
+        index={lightboxIdx}
+        onClose={() => setLightboxIdx(null)}
+        onPrev={() => setLightboxIdx((i) => (i - 1 + reporte.imagenes.length) % reporte.imagenes.length)}
+        onNext={() => setLightboxIdx((i) => (i + 1) % reporte.imagenes.length)}
+      />
+    )}
   );
 };
 
-const st = {
-  wrapper:        { maxWidth: '720px', margin: '0 auto', padding: '32px 20px 80px', display: 'flex', flexDirection: 'column', gap: '24px', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" },
+const st = {  wrapper:        { maxWidth: '720px', margin: '0 auto', padding: '32px 20px 80px', display: 'flex', flexDirection: 'column', gap: '24px', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" },
   back:           { display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#64748b', textDecoration: 'none', fontWeight: '500' },
   card:           { background: '#fff', borderRadius: '12px', padding: '24px', boxShadow: '0 2px 12px rgba(0,0,0,0.07)', display: 'flex', flexDirection: 'column', gap: '14px' },
   header:         { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', flexWrap: 'wrap' },
@@ -253,6 +303,7 @@ const st = {
   sendBtn:        { display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 18px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' },
   commentErr:     { fontSize: '12px', color: '#ef4444', margin: 0 },
 
+  actionBtn:      { display: 'flex', alignItems: 'center', gap: '5px', background: 'none', border: '1px solid #e2e8f0', borderRadius: '20px', padding: '4px 10px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#94a3b8', fontFamily: 'inherit' },
   center:         { textAlign: 'center', marginTop: '80px', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", color: '#94a3b8' },
 };
 

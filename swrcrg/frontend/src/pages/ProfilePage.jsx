@@ -1,8 +1,12 @@
-import { useState } from 'react';
-import { User, Mail, Phone, Save, Lock, Eye, EyeOff } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { User, Mail, Phone, Save, Lock, Eye, EyeOff, FileText, CheckCircle, Clock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { updateMe, changePassword } from '../services/auth.service';
+import { getMyReports } from '../services/report.service';
 import { toast } from '../components/Toast';
+import { RowSkeleton } from '../components/Skeleton';
+import { Link } from 'react-router-dom';
+import { STATUS_COLORS } from '../constants/reportStatus';
 
 const ProfilePage = () => {
   const { user, saveSession } = useAuth();
@@ -16,6 +20,19 @@ const ProfilePage = () => {
   const [showPwd, setShowPwd] = useState({ actual: false, nueva: false, confirmar: false });
   const [savingPwd, setSavingPwd] = useState(false);
   const [pwdErr, setPwdErr]   = useState('');
+
+  const [myReports, setMyReports]   = useState([]);
+  const [loadingR, setLoadingR]     = useState(true);
+
+  useEffect(() => {
+    getMyReports()
+      .then(({ reportes }) => setMyReports(reportes ?? []))
+      .catch(() => {})
+      .finally(() => setLoadingR(false));
+  }, []);
+
+  const STATUS_LABEL = { pendiente: 'Pendiente', en_proceso: 'En proceso', resuelto: 'Resuelto' };
+  const formatDate = (iso) => new Date(iso).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
 
   const handleFormChange = (e) => { setForm({ ...form, [e.target.name]: e.target.value }); setFormErr(''); };
   const handlePwdChange  = (e) => { setPwd({ ...pwd,  [e.target.name]: e.target.value  }); setPwdErr('');  };
@@ -145,6 +162,56 @@ const ProfilePage = () => {
               {savingPwd ? 'Actualizando...' : 'Cambiar contraseña'}
             </button>
           </form>
+        </div>
+
+        {/* ── Historial de actividad ── */}
+        <div style={s.card}>
+          <h2 style={s.cardTitle}>Mi actividad</h2>
+          <div style={s.divider} />
+          {/* Mini stats */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '20px' }}>
+            {[
+              { icon: FileText,    label: 'Total',      value: myReports.length,                                                    color: '#2563eb' },
+              { icon: Clock,       label: 'Pendientes', value: myReports.filter((r) => r.estado?.nombre === 'pendiente').length,    color: '#f59e0b' },
+              { icon: CheckCircle, label: 'Resueltos',  value: myReports.filter((r) => r.estado?.nombre === 'resuelto').length,     color: '#16a34a' },
+            ].map(({ icon: Icon, label, value, color }) => (
+              <div key={label} style={{ textAlign: 'center', padding: '14px', background: '#f8fafc', borderRadius: '10px' }}>
+                <Icon size={18} strokeWidth={2} color={color} style={{ marginBottom: '6px' }} />
+                <p style={{ fontSize: '22px', fontWeight: '800', color: '#0f172a', margin: '0 0 2px' }}>{value}</p>
+                <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0 }}>{label}</p>
+              </div>
+            ))}
+          </div>
+          {/* Lista reciente */}
+          {loadingR ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {Array.from({ length: 3 }).map((_, i) => <RowSkeleton key={i} />)}
+            </div>
+          ) : myReports.length === 0 ? (
+            <p style={{ fontSize: '14px', color: '#94a3b8', textAlign: 'center' }}>Aún no has creado reportes.</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {myReports.slice(0, 5).map((r) => {
+                const badge = STATUS_COLORS[r.estado?.nombre] || {};
+                return (
+                  <Link key={r.id} to={`/reports/${r.id}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', background: '#f8fafc', borderRadius: '8px', textDecoration: 'none', gap: '12px' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: '14px', fontWeight: '600', color: '#0f172a', margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.titulo}</p>
+                      <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0 }}>{formatDate(r.fecha_reporte)}</p>
+                    </div>
+                    <span style={{ ...badge, fontSize: '10px', fontWeight: '700', padding: '2px 8px', borderRadius: '20px', whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                      {STATUS_LABEL[r.estado?.nombre] ?? r.estado?.nombre}
+                    </span>
+                  </Link>
+                );
+              })}
+              {myReports.length > 5 && (
+                <Link to="/mis-reportes" style={{ fontSize: '13px', color: '#2563eb', fontWeight: '600', textDecoration: 'none', textAlign: 'center', paddingTop: '4px' }}>
+                  Ver todos ({myReports.length}) →
+                </Link>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

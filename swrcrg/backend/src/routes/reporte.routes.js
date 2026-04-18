@@ -39,11 +39,14 @@ router.get('/me/reportes',         auth, authorize('ciudadano', 'administrador')
 router.post('/:id/imagenes',       auth, authorize('ciudadano', 'administrador'), upload.single('image'), ctrl.subirImagen);
 router.put('/:id',                 auth, authorize('ciudadano', 'administrador'), ctrl.editar);
 router.delete('/:id',              auth, authorize('ciudadano', 'administrador'), ctrl.eliminar);
+router.post('/:id/votar',          auth, authorize('ciudadano', 'administrador'), ctrl.votar);
+router.get('/cercanos',            ctrl.cercanos);
 
 // Solo admin
 router.put('/:id/estado',          auth, authorize('administrador'), validarEstado, ctrl.cambiarEstado);
 router.delete('/:id/imagenes/:imageId', auth, authorize('administrador'), ctrl.eliminarImagen);
 router.post('/:id/comentarios',    auth, authorize('administrador'), validarComentario, comentCtrl.agregar);
 router.delete('/:id/comentarios/:comentarioId', auth, authorize('administrador'), comentCtrl.eliminar);
+router.get('/exportar/csv',        auth, authorize('administrador'), ctrl.exportarCSV);
 
 module.exports = router;
