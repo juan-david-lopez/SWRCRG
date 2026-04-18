@@ -18,6 +18,7 @@ const Navbar = () => {
         <NavLink to="/" style={styles.brand}>SWRCRG</NavLink>
         <NavLink to="/" style={navStyle}>Inicio</NavLink>
         <NavLink to="/reports" style={navStyle}>Reportes</NavLink>
+        <NavLink to="/mapa" style={navStyle}>Mapa</NavLink>
         {user && <NavLink to="/reports/create" style={navStyle}>Crear reporte</NavLink>}
         {user && <NavLink to="/mis-reportes" style={navStyle}>Mis reportes</NavLink>}
         {user?.rol === 'administrador' && (
@@ -29,7 +30,9 @@ const Navbar = () => {
         {user ? (
           <>
             <NotificacionBell />
-            <span style={styles.username}>{user.nombre} {user.apellido}</span>
+            <NavLink to="/perfil" style={navStyle} title="Mi perfil">
+              <span style={styles.username}>{user.nombre} {user.apellido}</span>
+            </NavLink>
             <button onClick={handleLogout} style={styles.btn}>
               <LogOut size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
               Cerrar sesión

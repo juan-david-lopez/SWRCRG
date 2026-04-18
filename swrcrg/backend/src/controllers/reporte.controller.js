@@ -60,4 +60,23 @@ const eliminarImagen = handle(async (req, res) => {
   res.json({ imagen });
 });
 
-module.exports = { crear, listar, listarPorCategoria, obtener, misReportes, cambiarEstado, subirImagen, eliminarImagen };
+const editar = handle(async (req, res) => {
+  const reporte = await reporteService.obtenerPorId(req.params.id);
+  if (!reporte) return res.status(404).json({ error: 'Reporte no encontrado' });
+  if (reporte.usuario_id !== req.user.id && req.user.rol !== 'administrador')
+    return res.status(403).json({ error: 'No tienes permiso para editar este reporte' });
+  const { titulo, descripcion, direccion_referencia } = req.body;
+  const updated = await reporteService.editar(req.params.id, { titulo, descripcion, direccion_referencia });
+  res.json({ reporte: updated });
+});
+
+const eliminar = handle(async (req, res) => {
+  const reporte = await reporteService.obtenerPorId(req.params.id);
+  if (!reporte) return res.status(404).json({ error: 'Reporte no encontrado' });
+  if (reporte.usuario_id !== req.user.id && req.user.rol !== 'administrador')
+    return res.status(403).json({ error: 'No tienes permiso para eliminar este reporte' });
+  await reporteService.eliminar(req.params.id);
+  res.json({ message: 'Reporte eliminado' });
+});
+
+module.exports = { crear, listar, listarPorCategoria, obtener, misReportes, cambiarEstado, subirImagen, eliminarImagen, editar, eliminar };

@@ -98,4 +98,27 @@ const eliminarImagen = async (id) => {
   return img;
 };
 
-module.exports = { crear, listar, listarPorCategoria, obtenerPorId, obtenerPorUsuario, cambiarEstado, agregarImagen, eliminarImagen };
+const editar = async (id, { titulo, descripcion, direccion_referencia }) => {
+  const reporte = await Reporte.findByPk(id);
+  if (!reporte) throw Object.assign(new Error('Reporte no encontrado'), { status: 404 });
+  await reporte.update({
+    ...(titulo               !== undefined ? { titulo }               : {}),
+    ...(descripcion          !== undefined ? { descripcion }          : {}),
+    ...(direccion_referencia !== undefined ? { direccion_referencia } : {}),
+  });
+  return reporte.reload({
+    include: [
+      { model: EstadoReporte,    as: 'estado',    attributes: ['id', 'nombre'] },
+      { model: CategoriaReporte, as: 'categoria', attributes: ['id', 'nombre'] },
+      { model: ImagenReporte,    as: 'imagenes' },
+    ],
+  });
+};
+
+const eliminar = async (id) => {
+  const reporte = await Reporte.findByPk(id);
+  if (!reporte) throw Object.assign(new Error('Reporte no encontrado'), { status: 404 });
+  await reporte.destroy();
+};
+
+module.exports = { crear, listar, listarPorCategoria, obtenerPorId, obtenerPorUsuario, cambiarEstado, agregarImagen, eliminarImagen, editar, eliminar };

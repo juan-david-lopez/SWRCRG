@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Paperclip, FileImage, Send } from 'lucide-react';
+import { ArrowLeft, Paperclip, FileImage, Send, X } from 'lucide-react';
 import MapPicker from '../../components/MapPicker';
 import { createReportForm } from '../../services/report.service';
 import { get } from '../../services/api';
+import { toast } from '../../components/Toast';
 
 const INITIAL = { titulo: '', descripcion: '', direccion_referencia: '', categoria_id: '' };
 
@@ -20,7 +21,7 @@ const CreateReportPage = () => {
   const navigate = useNavigate();
   const [form, setForm]         = useState(INITIAL);
   const [coords, setCoords]     = useState(null);
-  const [image, setImage]       = useState(null);
+  const [images, setImages]     = useState([]);
   const [categorias, setCats]   = useState([]);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState('');
@@ -34,7 +35,12 @@ const CreateReportPage = () => {
 
   const handleChange    = (e) => { setForm({ ...form, [e.target.name]: e.target.value }); setError(''); };
   const handleMapSelect = ({ lat, lng }) => { setCoords({ lat, lng }); setCoordErr(false); };
-  const handleFile      = (e) => setImage(e.target.files[0] || null);
+  const handleFile      = (e) => {
+    const files = Array.from(e.target.files);
+    setImages((prev) => [...prev, ...files].slice(0, 5)); // max 5
+    e.target.value = '';
+  };
+  const removeImage = (idx) => setImages((prev) => prev.filter((_, i) => i !== idx));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -49,11 +55,22 @@ const CreateReportPage = () => {
     fd.append('latitud',              coords.lat);
     fd.append('longitud',             coords.lng);
     fd.append('categoria_id',         form.categoria_id);
-    if (image) fd.append('image', image);
+    // Primera imagen va como 'image' (backend existente), el resto se sube después
+    if (images[0]) fd.append('image', images[0]);
 
     setLoading(true);
     try {
-      await createReportForm(fd);
+      const { reporte } = await createReportForm(fd);
+      // Subir imágenes adicionales
+      if (images.length > 1 && reporte?.id) {
+        const { uploadReportImage } = await import('../../services/report.service');
+        for (const img of images.slice(1)) {
+          const imgFd = new FormData();
+          imgFd.append('image', img);
+          await uploadReportImage(reporte.id, imgFd).catch(() => {});
+        }
+      }
+      toast.success('Reporte creado correctamente');
       navigate('/reports');
     } catch (err) {
       setError(err.message);
@@ -132,14 +149,20 @@ const CreateReportPage = () => {
           <div style={s.fileSection}>
             <label style={s.fileBtn}>
               <Paperclip size={15} strokeWidth={2} color="#2563eb" />
-              <span>Adjuntar imagen</span>
-              <input type="file" accept="image/*" onChange={handleFile} style={{ display: 'none' }} />
+              <span>Adjuntar imágenes {images.length > 0 ? `(${images.length}/5)` : '(máx. 5)'}</span>
+              <input type="file" accept="image/*" multiple onChange={handleFile} style={{ display: 'none' }} />
             </label>
-            {image && (
-              <span style={s.fileName}>
-                <FileImage size={13} color="#64748b" />
-                {image.name}
-              </span>
+            {images.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {images.map((img, idx) => (
+                  <div key={idx} style={s.imgPreview}>
+                    <img src={URL.createObjectURL(img)} alt={img.name} style={s.imgThumb} />
+                    <button type="button" onClick={() => removeImage(idx)} style={s.imgRemove}>
+                      <X size={11} strokeWidth={3} color="#fff" />
+                    </button>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
 
@@ -184,6 +207,9 @@ const s = {
   fileSection:{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '8px' },
   fileBtn:    { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '11px', cursor: 'pointer', fontSize: '14px', fontWeight: '500', color: '#2563eb', background: '#fff' },
   fileName:   { display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#64748b' },
+  imgPreview: { position: 'relative', width: '72px', height: '72px', borderRadius: '8px', overflow: 'hidden', flexShrink: 0 },
+  imgThumb:   { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
+  imgRemove:  { position: 'absolute', top: '3px', right: '3px', width: '18px', height: '18px', borderRadius: '50%', background: 'rgba(0,0,0,0.55)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 },
 
   /* error */
   errorBox:   { margin: '0 20px', fontSize: '13px', color: '#dc2626', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '6px', padding: '10px 12px' },

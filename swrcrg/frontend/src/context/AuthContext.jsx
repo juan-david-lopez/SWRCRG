@@ -1,4 +1,5 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const AuthContext = createContext(null);
 
@@ -16,12 +17,19 @@ export const AuthProvider = ({ children }) => {
     setUser(user);
   };
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setToken(null);
     setUser(null);
-  };
+  }, []);
+
+  // Escuchar evento de sesión expirada desde api.js
+  useEffect(() => {
+    const handler = () => logout();
+    window.addEventListener('session-expired', handler);
+    return () => window.removeEventListener('session-expired', handler);
+  }, [logout]);
 
   return (
     <AuthContext.Provider value={{ user, token, saveSession, logout }}>

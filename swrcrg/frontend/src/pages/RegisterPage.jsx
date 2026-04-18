@@ -219,7 +219,7 @@ const s = {
   fieldErr:    { fontSize: '12px', color: '#ef4444', margin: 0 },
   strengthTrack: { height: '4px', background: '#e2e8f0', borderRadius: '2px', overflow: 'hidden' },
   strengthFill:  { height: '100%', borderRadius: '2px', transition: 'width .3s, background .3s' },
-  btn:         { padding: '13px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '15px', fontWeight: '600', fontFamily: 'inherit', marginTop: '4px' },
+  btn:         { padding: '13px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '15px', fontWeight: '600', fontFamily: 'inherit', marginTop: '4px' },
   loginLink:   { textAlign: 'center', fontSize: '13px', margin: 0, color: '#64748b' },
   loginAnchor: { color: '#2563eb', fontWeight: '600', textDecoration: 'none' },
   errorBox:    { fontSize: '13px', color: '#dc2626', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '6px', padding: '10px 12px', margin: 0 },

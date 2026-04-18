@@ -5,6 +5,8 @@ import LoginPage         from '../pages/LoginPage';
 import RegisterPage      from '../pages/RegisterPage';
 import AccessDenied      from '../pages/AccessDenied';
 import NotFound          from '../pages/NotFound';
+import ProfilePage       from '../pages/ProfilePage';
+import MapPage           from '../pages/MapPage';
 import CreateReportPage  from '../pages/reports/CreateReportPage';
 import ReportsListPage   from '../pages/reports/ReportsListPage';
 import ReportDetailPage  from '../pages/reports/ReportDetailPage';
@@ -16,24 +18,22 @@ import AdminRoute        from './AdminRoute';
 const AppRouter = () => (
   <BrowserRouter>
     <Routes>
-      {/* Sin layout: auth */}
       <Route path="/login"    element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 
-      {/* Con layout */}
       <Route element={<MainLayout />}>
-        <Route path="/"        element={<Home />} />
-        <Route path="/reports" element={<ReportsListPage />} />
+        <Route path="/"            element={<Home />} />
+        <Route path="/reports"     element={<ReportsListPage />} />
         <Route path="/reports/:id" element={<ReportDetailPage />} />
+        <Route path="/mapa"        element={<MapPage />} />
         <Route path="/acceso-denegado" element={<AccessDenied />} />
 
-        {/* Privadas: cualquier usuario autenticado */}
         <Route element={<ProtectedRoute />}>
           <Route path="/reports/create" element={<CreateReportPage />} />
           <Route path="/mis-reportes"   element={<MyReportsPage />} />
+          <Route path="/perfil"         element={<ProfilePage />} />
         </Route>
 
-        {/* Privadas: solo admin */}
         <Route element={<AdminRoute />}>
           <Route path="/admin/reports" element={<AdminReportsPage />} />
         </Route>

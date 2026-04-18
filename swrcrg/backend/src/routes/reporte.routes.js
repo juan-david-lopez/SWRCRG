@@ -37,6 +37,8 @@ router.get('/:id/comentarios',     comentCtrl.listar);
 router.post('/',                   auth, authorize('ciudadano', 'administrador'), upload.single('image'), validarReporte, ctrl.crear);
 router.get('/me/reportes',         auth, authorize('ciudadano', 'administrador'), ctrl.misReportes);
 router.post('/:id/imagenes',       auth, authorize('ciudadano', 'administrador'), upload.single('image'), ctrl.subirImagen);
+router.put('/:id',                 auth, authorize('ciudadano', 'administrador'), ctrl.editar);
+router.delete('/:id',              auth, authorize('ciudadano', 'administrador'), ctrl.eliminar);
 
 // Solo admin
 router.put('/:id/estado',          auth, authorize('administrador'), validarEstado, ctrl.cambiarEstado);

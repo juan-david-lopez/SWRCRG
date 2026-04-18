@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Bell, BarChart2, CheckCircle, MapPin, Map, ImageOff } from 'lucide-react';
+import { Bell, BarChart2, CheckCircle, ImageOff } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { getReports } from '../services/report.service';
 import { useAuth } from '../context/AuthContext';
 import { STATUS_COLORS } from '../constants/reportStatus';
@@ -133,11 +134,32 @@ const Home = () => {
             </div>
           </div>
           <div style={s.mapCard}>
-            <div style={s.mapPlaceholder}>
-              <Map size={48} strokeWidth={1} color="#94a3b8" style={{ display: 'block', margin: '0 auto 12px' }} />
-              <p style={s.mapLabel}>Mapa interactivo</p>
-              <p style={s.mapSub}>Disponible al crear un reporte</p>
-            </div>
+            {!loading && reports.length > 0 ? (
+              <MapContainer
+                center={[
+                  reports.reduce((sum, r) => sum + parseFloat(r.latitud), 0) / reports.length,
+                  reports.reduce((sum, r) => sum + parseFloat(r.longitud), 0) / reports.length,
+                ]}
+                zoom={13}
+                style={{ height: '100%', width: '100%', borderRadius: '16px' }}
+                scrollWheelZoom={false}
+              >
+                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                {reports.map((r) => (
+                  <Marker key={r.id} position={[parseFloat(r.latitud), parseFloat(r.longitud)]}>
+                    <Popup>
+                      <strong>{r.titulo}</strong><br />
+                      {r.estado?.nombre}
+                    </Popup>
+                  </Marker>
+                ))}
+              </MapContainer>
+            ) : (
+              <div style={s.mapPlaceholder}>
+                <p style={s.mapLabel}>{loading ? 'Cargando mapa...' : 'Sin reportes aún'}</p>
+                <p style={s.mapSub}>Los reportes aparecerán aquí</p>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -202,7 +224,7 @@ const Home = () => {
               <Link to="/register" style={s.footerLink}>Crear cuenta</Link>
               <Link to="/login" style={s.footerLink}>Iniciar sesión</Link>
               <Link to="/mis-reportes" style={s.footerLink}>Mis reportes</Link>
-              <Link to="/login" style={s.footerLink}>Perfil</Link>
+              <Link to="/perfil" style={s.footerLink}>Perfil</Link>
             </div>
             <div>
               <p style={s.footerColTitle}>Legal</p>
@@ -254,7 +276,7 @@ const s = {
   statItem: { display: 'flex', flexDirection: 'column', gap: '4px' },
   statNum: { fontSize: '32px', fontWeight: '700', color: '#0f172a' },
   statLabel: { fontSize: '11px', fontWeight: '600', letterSpacing: '1px', color: '#94a3b8', textTransform: 'uppercase' },
-  mapCard: { background: '#e2e8f0', borderRadius: '16px', minHeight: '280px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  mapCard: { background: '#e2e8f0', borderRadius: '16px', minHeight: '280px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' },
   mapPlaceholder: { textAlign: 'center', color: '#94a3b8' },
   mapLabel: { fontSize: '16px', fontWeight: '600', margin: '0 0 4px', color: '#64748b' },
   mapSub: { fontSize: '13px', margin: 0 },

@@ -14,6 +14,14 @@ const request = async (endpoint, options = {}) => {
 
   const data = await res.json();
 
+  // Sesión expirada — limpiar y redirigir al login
+  if (res.status === 401) {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.dispatchEvent(new Event('session-expired'));
+    throw new Error('Sesión expirada. Por favor inicia sesión nuevamente.');
+  }
+
   if (!res.ok) {
     throw new Error(data.error || 'Error en la solicitud');
   }
