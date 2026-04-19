@@ -94,3 +94,40 @@ p { margin: 0; }
 @media (min-width: 769px) {
   .hide-desktop { display: none !important; }
 }
+
+/* Split screen auth — ocultar panel de branding en móvil */
+@media (max-width: 768px) {
+  .auth-brand-panel { display: none !important; }
+  .auth-form-panel  { flex: 1 !important; }
+}
+
+/* Leaflet custom markers */
+.swrcrg-marker {
+  background: none !important;
+  border: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+.swrcrg-marker svg {
+  display: block;
+  overflow: visible;
+}
+
+/* Leaflet tooltip personalizado */
+.swrcrg-tooltip {
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18) !important;
+  background: #fff !important;
+  overflow: hidden !important;
+  pointer-events: none;
+}
+.swrcrg-tooltip::before {
+  border-top-color: #fff !important;
+}
+/* Cursor pointer en los marcadores */
+.swrcrg-marker {
+  cursor: pointer !important;
+}

@@ -41,7 +41,7 @@ const login = async ({ correo, contrasena }) => {
 
   return {
     token,
-    user: { id: user.id, nombre: user.nombre, apellido: user.apellido, correo: user.correo, rol: user.rol.nombre },
+    user: { id: user.id, nombre: user.nombre, apellido: user.apellido, correo: user.correo, rol: user.rol.nombre, avatar_url: user.avatar_url, onboarding_completado: user.onboarding_completado },
   };
 };
 

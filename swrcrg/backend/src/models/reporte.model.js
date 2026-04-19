@@ -13,6 +13,10 @@ module.exports = (sequelize, DataTypes) => {
     categoria_id:         { type: DataTypes.UUID, allowNull: false },
     votos:                { type: DataTypes.INTEGER, defaultValue: 0 },
     votantes:             { type: DataTypes.JSONB, defaultValue: [] },
+    asignado_a:           { type: DataTypes.UUID, allowNull: true },
+    reportes_contenido:   { type: DataTypes.JSONB, defaultValue: [] },
+    motivo_rechazo:       { type: DataTypes.TEXT, allowNull: true },
+    estado_bloqueado:     { type: DataTypes.BOOLEAN, defaultValue: false },
   }, {
     tableName:  'reportes',
     timestamps: true,

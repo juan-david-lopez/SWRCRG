@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getReport, getReportHistory, getReportComments, addComment, deleteComment, voteReport } from '../../services/report.service';
-import { STATUS_COLORS } from '../../constants/reportStatus';
+import { getReport, getReportHistory, getReportComments, addComment, deleteComment, voteReport, reportContent, reenviarReporte } from '../../services/report.service';
+import { STATUS_COLORS, STATUS_LABEL } from '../../constants/reportStatus';
 import { useAuth } from '../../context/AuthContext';
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
-import { Send, Trash2, ThumbsUp, Share2, Copy } from 'lucide-react';
+import { Send, Trash2, ThumbsUp, Share2, MapPin, User, Calendar, Flag, RotateCcw, XCircle, CheckCircle2 } from 'lucide-react';
 import { toast } from '../../components/Toast';
 import Lightbox from '../../components/Lightbox';
 import { TILE_URL, TILE_ATTR, createStatusIcon } from '../../components/MapMarkers';
@@ -13,8 +13,6 @@ const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://lo
 
 const formatDate = (iso) =>
   new Date(iso).toLocaleString('es-CO', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-
-const STATUS_LABEL = { pendiente: 'Pendiente', en_proceso: 'En proceso', resuelto: 'Resuelto' };
 
 const ReportDetailPage = () => {
   const { id }    = useParams();
@@ -98,6 +96,26 @@ const ReportDetailPage = () => {
     }
   };
 
+  const handleReportContent = async () => {
+    if (!user) return toast.error('Debes iniciar sesión para reportar contenido');
+    try {
+      await reportContent(id, 'Contenido inapropiado');
+      toast.success('Contenido reportado. Lo revisaremos pronto.');
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+
+  const handleReenviar = async () => {
+    try {
+      const { reporte: updated } = await reenviarReporte(id);
+      setReporte((prev) => ({ ...prev, estado: updated.estado, motivo_rechazo: null }));
+      toast.success('Reporte reenviado para revisión');
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+
   if (loading) return <p style={st.center}>Cargando...</p>;
   if (error)   return <p style={{ ...st.center, color: '#dc2626' }}>{error}</p>;
   if (!reporte) return null;
@@ -105,6 +123,7 @@ const ReportDetailPage = () => {
   const estadoNombre = reporte.estado?.nombre ?? '';
   const badge  = STATUS_COLORS[estadoNombre] || {};
   const center = [parseFloat(reporte.latitud), parseFloat(reporte.longitud)];
+  const canComment = !!user; // cualquier usuario autenticado puede comentar
 
   return (
     <div style={st.wrapper}>
@@ -129,6 +148,11 @@ const ReportDetailPage = () => {
             <button onClick={handleShare} style={st.actionBtn} title="Compartir">
               <Share2 size={15} strokeWidth={2} />
             </button>
+            {user && reporte.usuario_id !== user.id && (
+              <button onClick={handleReportContent} style={{ ...st.actionBtn, color: '#ef4444' }} title="Reportar contenido inapropiado">
+                <Flag size={15} strokeWidth={2} />
+              </button>
+            )}
           </div>
         </div>
 
@@ -138,15 +162,40 @@ const ReportDetailPage = () => {
 
         <p style={st.desc}>{reporte.descripcion}</p>
 
+        {/* Banner de rechazo — solo visible para el dueño */}
+        {estadoNombre === 'rechazado' && reporte.motivo_rechazo && user?.id === reporte.usuario_id && (
+          <div style={st.rechazoBanner}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+              <XCircle size={16} strokeWidth={2} color="#991b1b" />
+              <p style={st.rechazoTitle}>Tu reporte fue rechazado</p>
+            </div>
+            <p style={st.rechazoMsg}><strong>Motivo:</strong> {reporte.motivo_rechazo}</p>
+            <p style={{ margin: '4px 0 10px', fontSize: '13px', color: '#7f1d1d' }}>
+              Puedes corregir el reporte y reenviarlo para una nueva revisión, o eliminarlo.
+            </p>
+            <button onClick={handleReenviar} style={st.reenviarBtn}>
+              <RotateCcw size={14} strokeWidth={2} />
+              Reenviar para revisión
+            </button>
+          </div>
+        )}
+
         <div style={st.metaGroup}>
           {reporte.direccion_referencia && (
-            <p style={st.meta}>📌 {reporte.direccion_referencia}</p>
+            <p style={st.meta}>
+              <MapPin size={13} strokeWidth={2} color="var(--c-text-3)" style={{ flexShrink: 0 }} />
+              {reporte.direccion_referencia}
+            </p>
           )}
           <p style={st.meta}>
-            👤 {reporte.usuario?.nombre} {reporte.usuario?.apellido}
-            {reporte.usuario?.correo && <span style={{ color: 'var(--c-border)' }}> — {reporte.usuario.correo}</span>}
+            <User size={13} strokeWidth={2} color="var(--c-text-3)" style={{ flexShrink: 0 }} />
+            {reporte.usuario?.nombre} {reporte.usuario?.apellido}
+            {reporte.usuario?.correo && <span style={{ color: 'var(--c-text-3)' }}> — {reporte.usuario.correo}</span>}
           </p>
-          <p style={st.meta}>🗓 {formatDate(reporte.fecha_reporte)}</p>
+          <p style={st.meta}>
+            <Calendar size={13} strokeWidth={2} color="var(--c-text-3)" style={{ flexShrink: 0 }} />
+            {formatDate(reporte.fecha_reporte)}
+          </p>
         </div>
 
         {/* Mapa */}
@@ -220,7 +269,7 @@ const ReportDetailPage = () => {
                     {c.usuario?.nombre} {c.usuario?.apellido}
                     <span style={st.commentDate}> — {formatDate(c.fecha_creacion)}</span>
                   </span>
-                  {isAdmin && (
+                  {(isAdmin || c.usuario?.id === user?.id) && (
                     <button onClick={() => handleDeleteComment(c.id)} style={st.deleteBtn} title="Eliminar comentario">
                       <Trash2 size={13} strokeWidth={2} />
                     </button>
@@ -232,14 +281,14 @@ const ReportDetailPage = () => {
           </div>
         )}
 
-        {/* Form — solo admin puede comentar */}
-        {isAdmin && (
+        {/* Form — admin y dueño del reporte pueden comentar */}
+        {canComment && (
           <form onSubmit={handleAddComment} style={st.commentForm}>
             <div style={st.commentInputWrap}>
               <input
                 value={newComment}
                 onChange={(e) => { setNewComment(e.target.value); setCommentErr(''); }}
-                placeholder="Escribe un comentario oficial..."
+                placeholder={isAdmin ? 'Escribe un comentario oficial...' : 'Escribe un comentario...'}
                 style={st.commentInput}
               />
               <button type="submit" disabled={sending || !newComment.trim()} style={{ ...st.sendBtn, opacity: (sending || !newComment.trim()) ? 0.5 : 1 }}>
@@ -274,7 +323,7 @@ const st = {  wrapper:        { maxWidth: '720px', margin: '0 auto', padding: '3
   cat:            { fontSize: '12px', fontWeight: '600', color: '#7c3aed', background: '#ede9fe', padding: '3px 10px', borderRadius: '20px', alignSelf: 'flex-start' },
   desc:           { margin: 0, fontSize: '15px', color: 'var(--c-text-2)', lineHeight: '1.6' },
   metaGroup:      { display: 'flex', flexDirection: 'column', gap: '4px' },
-  meta:           { margin: 0, fontSize: '13px', color: 'var(--c-text-3)' },
+  meta:           { margin: 0, fontSize: '13px', color: 'var(--c-text-3)', display: 'flex', alignItems: 'center', gap: '6px' },
   sectionLabel:   { margin: '0 0 10px', fontSize: '13px', fontWeight: '700', color: 'var(--c-text)', textTransform: 'uppercase', letterSpacing: '0.5px' },
   imgs:           { display: 'flex', gap: '8px', flexWrap: 'wrap' },
   thumb:          { width: '140px', height: '100px', objectFit: 'cover', borderRadius: '8px', cursor: 'pointer' },
@@ -304,6 +353,10 @@ const st = {  wrapper:        { maxWidth: '720px', margin: '0 auto', padding: '3
   commentErr:     { fontSize: '12px', color: '#ef4444', margin: 0 },
 
   actionBtn:      { display: 'flex', alignItems: 'center', gap: '5px', background: 'none', border: '1px solid var(--c-border)', borderRadius: '20px', padding: '4px 10px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: 'var(--c-text-3)', fontFamily: 'inherit' },
+  rechazoBanner:  { background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '10px', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '4px' },
+  rechazoTitle:   { margin: 0, fontSize: '14px', fontWeight: '700', color: '#991b1b' },
+  rechazoMsg:     { margin: 0, fontSize: '14px', color: '#7f1d1d', lineHeight: '1.5' },
+  reenviarBtn:    { alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 18px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit' },
   center:         { textAlign: 'center', marginTop: '80px', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", color: 'var(--c-text-3)' },
 };
 

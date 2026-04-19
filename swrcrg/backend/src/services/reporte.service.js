@@ -58,27 +58,87 @@ const obtenerPorUsuario = async (usuario_id) => {
   });
 };
 
-const cambiarEstado = async (id, estado_nombre, admin_id, observacion) => {
+const cambiarEstado = async (id, estado_nombre, admin_id, observacion, motivo_rechazo) => {
   const reporte = await Reporte.findByPk(id, {
     include: [{ model: Usuario, as: 'usuario', attributes: ['id'] }],
   });
   if (!reporte) throw Object.assign(new Error('Reporte no encontrado'), { status: 404 });
 
+  // El admin solo puede cambiar el estado si el reporte está en 'pendiente'
+  // (primera revisión) o si fue reenviado (estado_bloqueado = false y estado = 'pendiente')
+  const estadoActual = await EstadoReporte.findByPk(reporte.estado_id);
+  if (estadoActual?.nombre !== 'pendiente') {
+    throw Object.assign(new Error('Solo puedes cambiar el estado de reportes en revisión (pendiente)'), { status: 400 });
+  }
+
+  // Validar que si rechaza, debe dar motivo
+  if (estado_nombre === 'rechazado' && !motivo_rechazo?.trim()) {
+    throw Object.assign(new Error('Debes proporcionar un motivo de rechazo'), { status: 400 });
+  }
+
+  // Solo se permiten los estados verificado y rechazado desde pendiente
+  if (!['verificado', 'rechazado'].includes(estado_nombre)) {
+    throw Object.assign(new Error(`Estado '${estado_nombre}' no es válido. Solo se permite 'verificado' o 'rechazado'`), { status: 400 });
+  }
+
   const estado = await EstadoReporte.findOne({ where: { nombre: estado_nombre } });
   if (!estado) throw Object.assign(new Error(`Estado '${estado_nombre}' no existe`), { status: 400 });
 
-  await reporte.update({ estado_id: estado.id });
+  await reporte.update({
+    estado_id:       estado.id,
+    estado_bloqueado: true,
+    motivo_rechazo:  estado_nombre === 'rechazado' ? motivo_rechazo.trim() : null,
+  });
 
   // Registrar historial
-  await HistorialEstado.create({ reporte_id: id, estado_id: estado.id, usuario_id: admin_id, observacion });
+  await HistorialEstado.create({
+    reporte_id:  id,
+    estado_id:   estado.id,
+    usuario_id:  admin_id,
+    observacion: estado_nombre === 'rechazado' ? motivo_rechazo : (observacion || ''),
+  });
 
   // Notificar al ciudadano
-  const tipo = estado_nombre === 'resuelto' ? 'reporte_resuelto' : 'cambio_estado';
+  const titulo  = estado_nombre === 'verificado'
+    ? '✅ Tu reporte fue verificado'
+    : '❌ Tu reporte fue rechazado';
+  const mensaje = estado_nombre === 'verificado'
+    ? 'Tu reporte ha sido revisado y verificado por el equipo.'
+    : `Tu reporte fue rechazado. Motivo: ${motivo_rechazo}. Puedes corregirlo y reenviarlo para una nueva revisión.`;
+
   await notificacionService.crear({
     usuario_id: reporte.usuario_id,
-    titulo:     `Tu reporte cambió a: ${estado_nombre}`,
-    mensaje:    observacion || `El estado de tu reporte fue actualizado a "${estado_nombre}".`,
-    tipo,
+    titulo,
+    mensaje,
+    tipo: estado_nombre === 'verificado' ? 'reporte_verificado' : 'reporte_rechazado',
+  });
+
+  return reporte.reload({ include: [{ model: EstadoReporte, as: 'estado' }] });
+};
+
+// Ciudadano reenvía un reporte rechazado para nueva revisión
+const reenviarParaRevision = async (id, usuario_id) => {
+  const reporte = await Reporte.findByPk(id, {
+    include: [{ model: EstadoReporte, as: 'estado' }],
+  });
+  if (!reporte) throw Object.assign(new Error('Reporte no encontrado'), { status: 404 });
+  if (reporte.usuario_id !== usuario_id)
+    throw Object.assign(new Error('No tienes permiso para reenviar este reporte'), { status: 403 });
+  if (reporte.estado?.nombre !== 'rechazado')
+    throw Object.assign(new Error('Solo puedes reenviar reportes rechazados'), { status: 400 });
+
+  const estadoPendiente = await EstadoReporte.findOne({ where: { nombre: 'pendiente' } });
+  await reporte.update({
+    estado_id:        estadoPendiente.id,
+    estado_bloqueado: false,
+    motivo_rechazo:   null,
+  });
+
+  await HistorialEstado.create({
+    reporte_id:  id,
+    estado_id:   estadoPendiente.id,
+    usuario_id,
+    observacion: 'Ciudadano reenvió el reporte para nueva revisión',
   });
 
   return reporte.reload({ include: [{ model: EstadoReporte, as: 'estado' }] });
@@ -150,4 +210,25 @@ const buscarCercanos = async (lat, lng, radioKm = 0.5) => {
   });
 };
 
-module.exports = { crear, listar, listarPorCategoria, obtenerPorId, obtenerPorUsuario, cambiarEstado, agregarImagen, eliminarImagen, editar, eliminar, votar, buscarCercanos };
+const reportarContenido = async (reporte_id, usuario_id, motivo) => {
+  const reporte = await Reporte.findByPk(reporte_id);
+  if (!reporte) throw Object.assign(new Error('Reporte no encontrado'), { status: 404 });
+  const reportes = reporte.reportes_contenido || [];
+  if (reportes.find((r) => r.usuario_id === usuario_id))
+    throw Object.assign(new Error('Ya reportaste este contenido'), { status: 400 });
+  await reporte.update({ reportes_contenido: [...reportes, { usuario_id, motivo, fecha: new Date() }] });
+};
+
+const asignar = async (reporte_id, funcionario_id) => {
+  const reporte = await Reporte.findByPk(reporte_id);
+  if (!reporte) throw Object.assign(new Error('Reporte no encontrado'), { status: 404 });
+  await reporte.update({ asignado_a: funcionario_id || null });
+  return reporte.reload({
+    include: [
+      { model: EstadoReporte,    as: 'estado',    attributes: ['id', 'nombre'] },
+      { model: CategoriaReporte, as: 'categoria', attributes: ['id', 'nombre'] },
+    ],
+  });
+};
+
+module.exports = { crear, listar, listarPorCategoria, obtenerPorId, obtenerPorUsuario, cambiarEstado, reenviarParaRevision, agregarImagen, eliminarImagen, editar, eliminar, votar, buscarCercanos, reportarContenido, asignar };

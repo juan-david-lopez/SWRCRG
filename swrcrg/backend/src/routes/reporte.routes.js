@@ -40,12 +40,17 @@ router.post('/:id/imagenes',       auth, authorize('ciudadano', 'administrador')
 router.put('/:id',                 auth, authorize('ciudadano', 'administrador'), ctrl.editar);
 router.delete('/:id',              auth, authorize('ciudadano', 'administrador'), ctrl.eliminar);
 router.post('/:id/votar',          auth, authorize('ciudadano', 'administrador'), ctrl.votar);
+router.post('/:id/reenviar',       auth, authorize('ciudadano'), ctrl.reenviarParaRevision);
 router.get('/cercanos',            ctrl.cercanos);
+// Comentarios: ciudadanos en sus propios reportes + admins en cualquiera
+router.post('/:id/comentarios',    auth, authorize('ciudadano', 'administrador'), validarComentario, comentCtrl.agregar);
+// Reportar contenido inapropiado
+router.post('/:id/reportar',       auth, authorize('ciudadano', 'administrador'), ctrl.reportarContenido);
 
 // Solo admin
 router.put('/:id/estado',          auth, authorize('administrador'), validarEstado, ctrl.cambiarEstado);
+router.put('/:id/asignar',         auth, authorize('administrador'), ctrl.asignar);
 router.delete('/:id/imagenes/:imageId', auth, authorize('administrador'), ctrl.eliminarImagen);
-router.post('/:id/comentarios',    auth, authorize('administrador'), validarComentario, comentCtrl.agregar);
 router.delete('/:id/comentarios/:comentarioId', auth, authorize('administrador'), comentCtrl.eliminar);
 router.get('/exportar/csv',        auth, authorize('administrador'), ctrl.exportarCSV);
 

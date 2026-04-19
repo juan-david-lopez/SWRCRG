@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { Link, useNavigate } from 'react-router-dom';
+import { MapContainer, TileLayer, Marker, Tooltip } from 'react-leaflet';
 import { getReports } from '../services/report.service';
 import { STATUS_COLORS } from '../constants/reportStatus';
 import { Search, X } from 'lucide-react';
 import { TILE_URL, TILE_ATTR, createStatusIcon } from '../components/MapMarkers';
+
+const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3000';
 
 const STATUS_LABEL = { pendiente: 'Pendiente', en_proceso: 'En proceso', resuelto: 'Resuelto' };
 const STATUS_OPTIONS = [
@@ -14,13 +16,14 @@ const STATUS_OPTIONS = [
   { value: 'resuelto',   label: 'Resuelto' },
 ];
 
-const DEFAULT_CENTER = [4.7110, -74.0721]; // Bogotá
+const DEFAULT_CENTER = [4.7110, -74.0721];
 
 const MapPage = () => {
-  const [reports, setReports]         = useState([]);
-  const [loading, setLoading]         = useState(true);
+  const [reports, setReports]           = useState([]);
+  const [loading, setLoading]           = useState(true);
   const [filterStatus, setFilterStatus] = useState('');
-  const [search, setSearch]           = useState('');
+  const [search, setSearch]             = useState('');
+  const navigate                        = useNavigate();
 
   useEffect(() => {
     getReports()
@@ -70,11 +73,11 @@ const MapPage = () => {
         {/* Leyenda */}
         <div style={s.legend}>
           {[
-            { estado: 'pendiente',  label: 'Pendiente',  color: '#f59e0b' },
-            { estado: 'en_proceso', label: 'En proceso', color: '#3b82f6' },
-            { estado: 'resuelto',   label: 'Resuelto',   color: '#22c55e' },
-          ].map(({ estado, label, color }) => (
-            <div key={estado} style={s.legendItem}>
+            { label: 'Pendiente',  color: '#f59e0b' },
+            { label: 'En proceso', color: '#3b82f6' },
+            { label: 'Resuelto',   color: '#22c55e' },
+          ].map(({ label, color }) => (
+            <div key={label} style={s.legendItem}>
               <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: color, flexShrink: 0 }} />
               <span style={s.legendLabel}>{label}</span>
             </div>
@@ -102,35 +105,79 @@ const MapPage = () => {
       {/* Map */}
       <div style={s.mapWrap}>
         {!loading && (
-          <MapContainer center={center} zoom={13} style={{ height: '100%', width: '100%' }} scrollWheelZoom>
+          <MapContainer center={center} zoom={13} style={{ height: '100%', width: '100%', minHeight: '400px' }} scrollWheelZoom>
             <TileLayer url={TILE_URL} attribution={TILE_ATTR} />
-            {filtered.map((r) => (
-              <Marker
-                key={r.id}
-                position={[parseFloat(r.latitud), parseFloat(r.longitud)]}
-                icon={createStatusIcon(r.estado?.nombre, 16)}
-              >
-                <Popup>
-                  <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", minWidth: '180px', padding: '4px 0' }}>
-                    <strong style={{ fontSize: '14px', color: 'var(--c-text)', display: 'block', marginBottom: '6px', lineHeight: '1.3' }}>{r.titulo}</strong>
-                    {r.categoria && (
-                      <span style={{ fontSize: '11px', color: '#7c3aed', background: '#ede9fe', padding: '2px 8px', borderRadius: '20px', display: 'inline-block', marginBottom: '8px' }}>
-                        {r.categoria.nombre.replace(/_/g, ' ')}
-                      </span>
-                    )}
-                    <br />
-                    <Link to={`/reports/${r.id}`} style={{ fontSize: '12px', color: '#2563eb', fontWeight: '700', textDecoration: 'none' }}>
-                      Ver detalle →
-                    </Link>
-                  </div>
-                </Popup>
-              </Marker>
-            ))}
+            {filtered.map((r) => {
+              const img = r.imagenes?.[0]?.url_imagen;
+              return (
+                <Marker
+                  key={r.id}
+                  position={[parseFloat(r.latitud), parseFloat(r.longitud)]}
+                  icon={createStatusIcon(r.estado?.nombre, 16)}
+                  eventHandlers={{
+                    click: () => navigate(`/reports/${r.id}`),
+                  }}
+                >
+                  {/* Tooltip — se muestra al hacer hover */}
+                  <Tooltip
+                    direction="top"
+                    offset={[0, -10]}
+                    opacity={1}
+                    className="swrcrg-tooltip"
+                  >
+                    <div style={tp.wrap}>
+                      {/* Imagen preview */}
+                      {img && (
+                        <div style={tp.imgWrap}>
+                          <img
+                            src={`${API_BASE}${img}`}
+                            alt={r.titulo}
+                            style={tp.img}
+                          />
+                        </div>
+                      )}
+                      <div style={tp.body}>
+                        {/* Badge estado */}
+                        {r.estado?.nombre && (
+                          <span style={{ ...tp.badge, ...STATUS_COLORS[r.estado.nombre] }}>
+                            {STATUS_LABEL[r.estado.nombre] ?? r.estado.nombre}
+                          </span>
+                        )}
+                        <p style={tp.title}>{r.titulo}</p>
+                        {r.categoria && (
+                          <span style={tp.cat}>{r.categoria.nombre.replace(/_/g, ' ')}</span>
+                        )}
+                        {r.direccion_referencia && (
+                          <p style={{ ...tp.dir, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <MapPin size={11} strokeWidth={2} color="#64748b" />
+                            {r.direccion_referencia}
+                          </p>
+                        )}
+                        <p style={tp.hint}>Clic para ver detalle</p>
+                      </div>
+                    </div>
+                  </Tooltip>
+                </Marker>
+              );
+            })}
           </MapContainer>
         )}
       </div>
     </div>
   );
+};
+
+/* ── Estilos del tooltip ── */
+const tp = {
+  wrap:  { fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", minWidth: '200px', maxWidth: '240px', padding: 0, overflow: 'hidden' },
+  imgWrap:{ width: '100%', height: '110px', overflow: 'hidden' },
+  img:   { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
+  body:  { padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '5px' },
+  badge: { fontSize: '10px', fontWeight: '700', padding: '2px 8px', borderRadius: '20px', alignSelf: 'flex-start', textTransform: 'uppercase', letterSpacing: '0.3px' },
+  title: { margin: 0, fontSize: '13px', fontWeight: '700', color: '#0f172a', lineHeight: '1.3' },
+  cat:   { fontSize: '11px', color: '#7c3aed', background: '#ede9fe', padding: '2px 8px', borderRadius: '20px', alignSelf: 'flex-start' },
+  dir:   { margin: 0, fontSize: '11px', color: '#64748b' },
+  hint:  { margin: 0, fontSize: '11px', color: '#94a3b8', fontStyle: 'italic' },
 };
 
 const s = {
@@ -151,8 +198,8 @@ const s = {
   reportItemTitle:{ fontSize: '13px', fontWeight: '600', color: 'var(--c-text)', lineHeight: '1.3' },
   badge:          { fontSize: '10px', fontWeight: '700', padding: '2px 7px', borderRadius: '20px', whiteSpace: 'nowrap', flexShrink: 0, textTransform: 'uppercase', letterSpacing: '0.3px' },
   reportItemCat:  { fontSize: '11px', color: '#7c3aed', background: '#ede9fe', padding: '2px 8px', borderRadius: '20px', alignSelf: 'flex-start' },
-  mapWrap:        { flex: 1, position: 'relative' },
-  legend:         { display: 'flex', flexDirection: 'column', gap: '6px', padding: '10px 12px', background: 'var(--c-bg)', borderRadius: '8px', border: '1px solid var(--c-bg)' },
+  mapWrap:        { flex: 1, position: 'relative', height: '100%' },
+  legend:         { display: 'flex', flexDirection: 'column', gap: '6px', padding: '10px 12px', background: 'var(--c-bg)', borderRadius: '8px' },
   legendItem:     { display: 'flex', alignItems: 'center', gap: '8px' },
   legendLabel:    { fontSize: '12px', color: 'var(--c-text-2)', fontWeight: '500' },
 };

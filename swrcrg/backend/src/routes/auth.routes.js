@@ -5,6 +5,7 @@ const { body, validationResult } = require('express-validator');
 const { registerUser, loginUser } = require('../controllers/auth.controller');
 const authMiddleware = require('../middlewares/auth.middleware');
 const authorize = require('../middlewares/authorize.middleware');
+const upload = require('../config/upload');
 
 const router = Router();
 
@@ -146,6 +147,35 @@ router.patch('/usuarios/:id/rol', authMiddleware, authorize('administrador'), [
     await user.update({ rol_id: rol.id });
     const { contrasena: _, ...safe } = user.toJSON();
     res.json({ user: safe });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Subir avatar
+router.post('/me/avatar', authMiddleware, upload.single('avatar'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No se proporcionó imagen' });
+    const { Usuario } = require('../models');
+    const user = await Usuario.findByPk(req.user.id);
+    if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+    const avatar_url = `/uploads/${req.file.filename}`;
+    await user.update({ avatar_url });
+    const { contrasena: _, ...safe } = user.toJSON();
+    res.json({ user: safe, avatar_url });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Completar onboarding
+router.post('/me/onboarding', authMiddleware, async (req, res) => {
+  try {
+    const { Usuario } = require('../models');
+    const user = await Usuario.findByPk(req.user.id);
+    if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+    await user.update({ onboarding_completado: true });
+    res.json({ message: 'Onboarding completado' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

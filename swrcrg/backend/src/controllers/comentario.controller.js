@@ -26,7 +26,7 @@ const listar = handle(async (req, res) => {
 });
 
 const eliminar = handle(async (req, res) => {
-  const comentario = await comentarioService.eliminar(req.params.comentarioId, req.user.id);
+  const comentario = await comentarioService.eliminar(req.params.comentarioId, req.user.id, req.user.rol);
   if (!comentario) return res.status(404).json({ error: 'Comentario no encontrado' });
   res.json({ comentario });
 });

@@ -2,11 +2,34 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Paperclip, Send, X, AlertTriangle } from 'lucide-react';
 import MapPicker from '../../components/MapPicker';
+import Select from '../../components/Select';
 import { createReportForm, uploadReportImage, getNearbyReports } from '../../services/report.service';
 import { get } from '../../services/api';
 import { toast } from '../../components/Toast';
 
 const INITIAL = { titulo: '', descripcion: '', direccion_referencia: '', categoria_id: '' };
+
+// Comprime una imagen a máx 1200px y calidad 0.82
+const compressImage = (file) => new Promise((resolve) => {
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 1200;
+      let { width, height } = img;
+      if (width > MAX || height > MAX) {
+        if (width > height) { height = Math.round(height * MAX / width); width = MAX; }
+        else { width = Math.round(width * MAX / height); height = MAX; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      canvas.toBlob((blob) => resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' })), 'image/jpeg', 0.82);
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
 
 /* Campo con label flotante sobre el borde */
 const FloatField = ({ label, children, hint }) => (
@@ -43,9 +66,12 @@ const CreateReportPage = () => {
       .then(({ reportes }) => setNearby(reportes ?? []))
       .catch(() => {});
   };
-  const handleFile      = (e) => {
+  const handleFile = (e) => {
     const files = Array.from(e.target.files);
-    setImages((prev) => [...prev, ...files].slice(0, 5)); // max 5
+    // Comprimir imágenes antes de agregar
+    Promise.all(files.map(compressImage))
+      .then((compressed) => setImages((prev) => [...prev, ...compressed].slice(0, 5)))
+      .catch(() => setImages((prev) => [...prev, ...files].slice(0, 5)));
     e.target.value = '';
   };
   const removeImage = (idx) => setImages((prev) => prev.filter((_, i) => i !== idx));
@@ -130,15 +156,13 @@ const CreateReportPage = () => {
 
           {/* Categoría */}
           <FloatField label="Categoría">
-            <select
-              name="categoria_id" value={form.categoria_id} onChange={handleChange}
-              style={{ ...s.input, cursor: 'pointer', appearance: 'none', backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E\")", backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center', paddingRight: '36px' }}
-            >
-              <option value="">Selecciona una categoría</option>
-              {categorias.map((c) => (
-                <option key={c.id} value={c.id}>{c.nombre.replace(/_/g, ' ')}</option>
-              ))}
-            </select>
+            <Select
+              value={form.categoria_id}
+              onChange={(val) => { setForm({ ...form, categoria_id: val }); setError(''); }}
+              options={categorias.map((c) => ({ value: c.id, label: c.nombre.replace(/_/g, ' ') }))}
+              placeholder="Selecciona una categoría"
+              style={{ border: 'none', padding: '2px 0', background: 'transparent', width: '100%' }}
+            />
           </FloatField>
 
           {/* Mapa */}

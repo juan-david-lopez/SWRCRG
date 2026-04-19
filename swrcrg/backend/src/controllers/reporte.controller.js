@@ -43,8 +43,13 @@ const misReportes = handle(async (req, res) => {
 });
 
 const cambiarEstado = handle(async (req, res) => {
-  const { estado, observacion } = req.body;
-  const reporte = await reporteService.cambiarEstado(req.params.id, estado, req.user.id, observacion);
+  const { estado, observacion, motivo_rechazo } = req.body;
+  const reporte = await reporteService.cambiarEstado(req.params.id, estado, req.user.id, observacion, motivo_rechazo);
+  res.json({ reporte });
+});
+
+const reenviarParaRevision = handle(async (req, res) => {
+  const reporte = await reporteService.reenviarParaRevision(req.params.id, req.user.id);
   res.json({ reporte });
 });
 
@@ -91,8 +96,21 @@ const cercanos = handle(async (req, res) => {
   res.json({ reportes });
 });
 
-const exportarCSV = handle(async (req, res) => {
-  const reportes = await reporteService.listar();
+const reportarContenido = handle(async (req, res) => {
+  const reporte = await reporteService.obtenerPorId(req.params.id);
+  if (!reporte) return res.status(404).json({ error: 'Reporte no encontrado' });
+  if (reporte.usuario_id === req.user.id) return res.status(400).json({ error: 'No puedes reportar tu propio contenido' });
+  await reporteService.reportarContenido(req.params.id, req.user.id, req.body.motivo || '');
+  res.json({ message: 'Contenido reportado. El equipo lo revisará.' });
+});
+
+const asignar = handle(async (req, res) => {
+  const { funcionario_id } = req.body;
+  const reporte = await reporteService.asignar(req.params.id, funcionario_id);
+  res.json({ reporte });
+});
+
+const exportarCSV = handle(async (req, res) => {  const reportes = await reporteService.listar();
   const header = ['ID', 'Título', 'Descripción', 'Estado', 'Categoría', 'Dirección', 'Latitud', 'Longitud', 'Usuario', 'Fecha'];
   const rows = reportes.map((r) => [
     r.id,
@@ -112,4 +130,4 @@ const exportarCSV = handle(async (req, res) => {
   res.send('\uFEFF' + csv); // BOM para Excel
 });
 
-module.exports = { crear, listar, listarPorCategoria, obtener, misReportes, cambiarEstado, subirImagen, eliminarImagen, editar, eliminar, votar, cercanos, exportarCSV };
+module.exports = { crear, listar, listarPorCategoria, obtener, misReportes, cambiarEstado, reenviarParaRevision, subirImagen, eliminarImagen, editar, eliminar, votar, cercanos, exportarCSV, reportarContenido, asignar };

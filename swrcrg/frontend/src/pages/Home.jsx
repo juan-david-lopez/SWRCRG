@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Bell, BarChart2, CheckCircle, ImageOff } from 'lucide-react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Tooltip } from 'react-leaflet';
 import { getReports } from '../services/report.service';
 import { useAuth } from '../context/AuthContext';
 import { STATUS_COLORS } from '../constants/reportStatus';
@@ -145,7 +145,7 @@ const Home = () => {
                   reports.reduce((sum, r) => sum + parseFloat(r.longitud), 0) / reports.length,
                 ]}
                 zoom={13}
-                style={{ height: '100%', width: '100%', borderRadius: '16px' }}
+                style={{ height: '320px', width: '100%' }}
                 scrollWheelZoom={false}
                 zoomControl={false}
               >
@@ -155,13 +155,15 @@ const Home = () => {
                     key={r.id}
                     position={[parseFloat(r.latitud), parseFloat(r.longitud)]}
                     icon={createStatusIcon(r.estado?.nombre, 14)}
+                    eventHandlers={{ click: () => navigate(`/reports/${r.id}`) }}
                   >
-                    <Popup>
-                      <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", minWidth: '150px', padding: '2px 0' }}>
-                        <strong style={{ fontSize: '13px', color: 'var(--c-text)', display: 'block', marginBottom: '4px' }}>{r.titulo}</strong>
-                        <span style={{ fontSize: '11px', color: 'var(--c-text-2)' }}>{r.categoria?.nombre?.replace(/_/g, ' ')}</span>
+                    <Tooltip direction="top" offset={[0, -8]} opacity={1} className="swrcrg-tooltip">
+                      <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", minWidth: '160px', padding: '10px 12px' }}>
+                        <p style={{ margin: '0 0 4px', fontSize: '13px', fontWeight: '700', color: '#0f172a', lineHeight: '1.3' }}>{r.titulo}</p>
+                        <span style={{ fontSize: '11px', color: '#64748b' }}>{r.categoria?.nombre?.replace(/_/g, ' ')}</span>
+                        <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#94a3b8', fontStyle: 'italic' }}>Clic para ver detalle</p>
                       </div>
-                    </Popup>
+                    </Tooltip>
                   </Marker>
                 ))}
               </MapContainer>
@@ -287,7 +289,7 @@ const s = {
   statItem: { display: 'flex', flexDirection: 'column', gap: '4px' },
   statNum: { fontSize: '32px', fontWeight: '700', color: 'var(--c-text)' },
   statLabel: { fontSize: '11px', fontWeight: '600', letterSpacing: '1px', color: 'var(--c-text-3)', textTransform: 'uppercase' },
-  mapCard: { background: 'var(--c-border)', borderRadius: '16px', minHeight: '280px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  mapCard: { borderRadius: '16px', height: '320px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--c-border)' },
   mapPlaceholder: { textAlign: 'center', color: 'var(--c-text-3)' },
   mapLabel: { fontSize: '16px', fontWeight: '600', margin: '0 0 4px', color: 'var(--c-text-2)' },
   mapSub: { fontSize: '13px', margin: 0 },

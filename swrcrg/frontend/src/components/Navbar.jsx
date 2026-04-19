@@ -4,6 +4,7 @@ import { LogOut, Moon, Sun, Menu, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import NotificacionBell from './NotificacionBell';
+import GlobalSearch from './GlobalSearch';
 
 const Navbar = () => {
   const { user, logout }  = useAuth();
@@ -53,7 +54,8 @@ const Navbar = () => {
         </div>
 
         {/* Right actions */}
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <GlobalSearch />
           {/* Dark mode toggle */}
           <button onClick={toggle} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '4px', color: dark ? '#f1f5f9' : '#64748b' }} title={dark ? 'Modo claro' : 'Modo oscuro'}>
             {dark ? <Sun size={18} strokeWidth={1.8} /> : <Moon size={18} strokeWidth={1.8} />}

@@ -1,12 +1,14 @@
-import { useState, useEffect } from 'react';
-import { User, Mail, Phone, Save, Lock, Eye, EyeOff, FileText, CheckCircle, Clock } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { User, Mail, Phone, Save, Lock, Eye, EyeOff, FileText, CheckCircle, Clock, Camera } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { updateMe, changePassword } from '../services/auth.service';
+import { updateMe, changePassword, uploadAvatar } from '../services/auth.service';
 import { getMyReports } from '../services/report.service';
 import { toast } from '../components/Toast';
 import { RowSkeleton } from '../components/Skeleton';
 import { Link } from 'react-router-dom';
 import { STATUS_COLORS } from '../constants/reportStatus';
+
+const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3000';
 
 const ProfilePage = () => {
   const { user, saveSession } = useAuth();
@@ -23,6 +25,8 @@ const ProfilePage = () => {
 
   const [myReports, setMyReports]   = useState([]);
   const [loadingR, setLoadingR]     = useState(true);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const avatarInputRef = useRef(null);
 
   useEffect(() => {
     getMyReports()
@@ -36,6 +40,23 @@ const ProfilePage = () => {
 
   const handleFormChange = (e) => { setForm({ ...form, [e.target.name]: e.target.value }); setFormErr(''); };
   const handlePwdChange  = (e) => { setPwd({ ...pwd,  [e.target.name]: e.target.value  }); setPwdErr('');  };
+
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingAvatar(true);
+    try {
+      const fd = new FormData();
+      fd.append('avatar', file);
+      const { avatar_url } = await uploadAvatar(fd);
+      saveSession(token, { ...user, avatar_url });
+      toast.success('Foto de perfil actualizada');
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
 
   const handleSaveProfile = async (e) => {
     e.preventDefault();
@@ -80,7 +101,26 @@ const ProfilePage = () => {
         {/* ── Información personal ── */}
         <div style={s.card}>
           <div style={s.avatarSection}>
-            <div style={s.avatar}>{initials}</div>
+            <div style={{ position: 'relative', flexShrink: 0 }}>
+              {user?.avatar_url ? (
+                <img
+                  src={`${API_BASE}${user.avatar_url}`}
+                  alt="Avatar"
+                  style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', display: 'block' }}
+                />
+              ) : (
+                <div style={s.avatar}>{initials}</div>
+              )}
+              <button
+                onClick={() => avatarInputRef.current?.click()}
+                disabled={uploadingAvatar}
+                style={{ position: 'absolute', bottom: 0, right: 0, width: '22px', height: '22px', borderRadius: '50%', background: '#2563eb', border: '2px solid var(--c-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                title="Cambiar foto"
+              >
+                <Camera size={11} strokeWidth={2.5} color="#fff" />
+              </button>
+              <input ref={avatarInputRef} type="file" accept="image/*" onChange={handleAvatarChange} style={{ display: 'none' }} />
+            </div>
             <div>
               <p style={s.avatarName}>{user?.nombre} {user?.apellido}</p>
               <span style={s.rolBadge}>{user?.rol === 'administrador' ? 'Administrador' : 'Ciudadano'}</span>

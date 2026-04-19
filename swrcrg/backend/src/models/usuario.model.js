@@ -10,6 +10,8 @@ module.exports = (sequelize, DataTypes) => {
     telefono:    { type: DataTypes.STRING(20) },
     rol_id:      { type: DataTypes.UUID, allowNull: false },
     activo:      { type: DataTypes.BOOLEAN, defaultValue: true },
+    avatar_url:  { type: DataTypes.STRING(500), allowNull: true },
+    onboarding_completado: { type: DataTypes.BOOLEAN, defaultValue: false },
   }, {
     tableName:  'usuarios',
     timestamps: true,

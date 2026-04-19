@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { LogOut, Home, Plus, History, User, MapPin, Calendar, Flag, ImageOff, Pencil, Trash2, X, Check } from 'lucide-react';
-import { getMyReports, editReport, deleteReport } from '../../services/report.service';
+import { LogOut, Home, Plus, History, User, MapPin, Calendar, Flag, ImageOff, Pencil, Trash2, X, Check, XCircle, RotateCcw } from 'lucide-react';
+import { getMyReports, editReport, deleteReport, reenviarReporte } from '../../services/report.service';
 import { useAuth } from '../../context/AuthContext';
-import { STATUS_COLORS } from '../../constants/reportStatus';
+import { STATUS_COLORS, STATUS_LABEL } from '../../constants/reportStatus';
 import { RowSkeleton } from '../../components/Skeleton';
 import ConfirmModal from '../../components/ConfirmModal';
 import { toast } from '../../components/Toast';
@@ -13,16 +13,17 @@ const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://lo
 const formatDate = (iso) =>
   new Date(iso).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
 
-const STATUS_LABEL = { pendiente: 'Pendiente', en_proceso: 'En proceso', resuelto: 'Resuelto' };
+const STATUS_LABEL_LOCAL = STATUS_LABEL; // alias para compatibilidad
 
 /* ── Card horizontal ── */
-const MyReportCard = ({ report, onEdit, onDelete }) => {
+const MyReportCard = ({ report, onEdit, onDelete, onReenviar }) => {
   const estado = report.estado?.nombre ?? '';
   const badge  = STATUS_COLORS[estado] || {};
   const rawImg = report.imagenes?.[0]?.url_imagen;
   const img    = rawImg ? `${API_BASE}${rawImg}` : null;
   const dir    = report.direccion_referencia;
   const canEdit = estado === 'pendiente';
+  const isRechazado = estado === 'rechazado';
 
   return (
     <div style={s.card}>
@@ -48,6 +49,26 @@ const MyReportCard = ({ report, onEdit, onDelete }) => {
           </div>
         </div>
         <p style={s.cardDesc}>{report.descripcion}</p>
+
+        {/* Banner de rechazo */}
+        {isRechazado && report.motivo_rechazo && (
+          <div style={s.rechazoBanner}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+              <XCircle size={14} strokeWidth={2} color="#991b1b" />
+              <p style={s.rechazoTitle}>Motivo de rechazo:</p>
+            </div>
+            <p style={s.rechazoMsg}>{report.motivo_rechazo}</p>
+            <div style={{ display: 'flex', gap: '8px', marginTop: '10px', flexWrap: 'wrap' }}>
+              <button onClick={() => onReenviar(report)} style={s.reenviarBtn}>
+                <RotateCcw size={13} strokeWidth={2} />
+                Reenviar para revisión
+              </button>
+              <button onClick={() => onDelete(report)} style={s.eliminarBtn}>
+                Eliminar reporte
+              </button>
+            </div>
+          </div>
+        )}
         {report.categoria && (
           <span style={s.categoria}>{report.categoria.nombre.replace(/_/g, ' ')}</span>
         )}
@@ -139,6 +160,7 @@ const MyReportsPage = () => {
   const [error, setError]     = useState('');
   const [editing, setEditing] = useState(null);
   const [deleting, setDeleting] = useState(null);
+  const [reenviando, setReenviando] = useState(null);
 
   useEffect(() => {
     getMyReports()
@@ -152,6 +174,19 @@ const MyReportsPage = () => {
     setReports((prev) => prev.map((r) => r.id === id ? { ...r, ...reporte } : r));
     setEditing(null);
     toast.success('Reporte actualizado');
+  };
+
+  const handleReenviar = async (report) => {
+    setReenviando(report.id);
+    try {
+      const { reporte } = await reenviarReporte(report.id);
+      setReports((prev) => prev.map((r) => r.id === report.id ? { ...r, estado: reporte.estado, motivo_rechazo: null } : r));
+      toast.success('Reporte reenviado para revisión');
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setReenviando(null);
+    }
   };
 
   const handleConfirmDelete = async () => {
@@ -199,7 +234,7 @@ const MyReportsPage = () => {
             <h2 style={s.sectionTitle}>Tus reportes <span style={s.count}>{reports.length}</span></h2>
             <div style={s.list}>
               {reports.map((r) => (
-                <MyReportCard key={r.id} report={r} onEdit={setEditing} onDelete={setDeleting} />
+                <MyReportCard key={r.id} report={r} onEdit={setEditing} onDelete={setDeleting} onReenviar={handleReenviar} />
               ))}
             </div>
           </>
@@ -264,6 +299,11 @@ const s = {
   metaRow:     { display: 'flex', flexDirection: 'column', gap: '3px' },
   metaItem:    { display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: 'var(--c-text-3)' },
   detailLink:  { fontSize: '13px', fontWeight: '700', color: '#2563eb', textDecoration: 'none', whiteSpace: 'nowrap' },
+  rechazoBanner: { background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '4px' },
+  rechazoTitle:  { margin: 0, fontSize: '12px', fontWeight: '700', color: '#991b1b' },
+  rechazoMsg:    { margin: 0, fontSize: '13px', color: '#7f1d1d', lineHeight: '1.5' },
+  reenviarBtn:   { display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 14px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit' },
+  eliminarBtn:   { padding: '7px 14px', background: 'none', color: '#dc2626', border: '1px solid #fca5a5', borderRadius: '8px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit' },
   emptyWrap:   { display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' },
   emptyCard:   { background: 'var(--c-surface)', borderRadius: '20px', padding: '48px 40px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', maxWidth: '360px', width: '100%', boxShadow: '0 4px 24px var(--c-shadow)' },
   emptyIcon:   { width: '64px', height: '64px', borderRadius: '50%', background: 'var(--c-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '4px' },

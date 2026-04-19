@@ -20,8 +20,8 @@ export const getReports         = ()                    => get('/reportes');
 export const getReport          = (id)                  => get(`/reportes/${id}`);
 export const getMyReports       = ()                    => get('/reportes/me/reportes');
 export const getReportsByCategory = (catId)             => get(`/reportes/categoria/${catId}`);
-export const updateReportStatus = (id, estado, observacion) =>
-  put(`/reportes/${id}/estado`, { estado, observacion });
+export const updateReportStatus = (id, estado, observacion, motivo_rechazo) =>
+  put(`/reportes/${id}/estado`, { estado, observacion, motivo_rechazo });
 export const getReportHistory   = (id)                  => get(`/reportes/${id}/historial`);
 export const getReportComments  = (id)                  => get(`/reportes/${id}/comentarios`);
 export const addComment         = (id, comentario)       => post(`/reportes/${id}/comentarios`, { comentario });
@@ -43,7 +43,10 @@ export const uploadReportImage = (id, formData) => {
 };
 
 export const voteReport         = (id)           => post(`/reportes/${id}/votar`, {});
+export const reenviarReporte    = (id)           => post(`/reportes/${id}/reenviar`, {});
 export const getNearbyReports   = (lat, lng, radio = 0.5) => get(`/reportes/cercanos?lat=${lat}&lng=${lng}&radio=${radio}`);
+export const reportContent      = (id, motivo)   => post(`/reportes/${id}/reportar`, { motivo });
+export const assignReport       = (id, funcionario_id) => put(`/reportes/${id}/asignar`, { funcionario_id });
 export const exportReportsCSV   = () => {
   const token = localStorage.getItem('token');
   return fetch(`${BASE_URL}/reportes/exportar/csv`, {

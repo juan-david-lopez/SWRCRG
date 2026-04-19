@@ -1,16 +1,17 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getReports, updateReportStatus, exportReportsCSV } from '../../services/report.service';
+import { getReports, updateReportStatus, exportReportsCSV, assignReport } from '../../services/report.service';
 import { getUsuarios, toggleUsuarioActivo, changeUsuarioRol } from '../../services/auth.service';
-import { REPORT_STATUSES, STATUS_COLORS } from '../../constants/reportStatus';
-import { MapPin, Calendar, User, ChevronDown, Search, X, BarChart2, Users, FileText, CheckCircle, Download } from 'lucide-react';
+import { REPORT_STATUSES, STATUS_COLORS, STATUS_LABEL } from '../../constants/reportStatus';
+import { MapPin, Calendar, User, Search, X, BarChart2, Users, FileText, CheckCircle, Download, UserCheck, Clock } from 'lucide-react';
 import { RowSkeleton } from '../../components/Skeleton';
 import ConfirmModal from '../../components/ConfirmModal';
+import Select from '../../components/Select';
 import { toast } from '../../components/Toast';
 
 const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3000';
 const formatDate = (iso) => new Date(iso).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
-const STATUS_LABEL = { pendiente: 'Pendiente', en_proceso: 'En proceso', resuelto: 'Resuelto' };
+// STATUS_LABEL ahora viene de constants
 
 const StatCard = ({ icon: Icon, label, value, color }) => (
   <div style={s.statCard}>
@@ -24,6 +25,43 @@ const StatCard = ({ icon: Icon, label, value, color }) => (
   </div>
 );
 
+const FlaggedTab = ({ reports, formatDate }) => {
+  const flagged = reports.filter((r) => r.reportes_contenido?.length > 0);
+  if (flagged.length === 0)
+    return <p style={{ color: 'var(--c-text-3)', textAlign: 'center', marginTop: '40px', fontSize: '15px' }}>No hay reportes marcados como inapropiados.</p>;
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      {flagged.map((r) => (
+        <div key={r.id} style={{ background: 'var(--c-surface)', borderRadius: '12px', padding: '20px 24px', boxShadow: '0 2px 12px var(--c-shadow)', display: 'flex', flexDirection: 'column', gap: '12px', borderLeft: '3px solid #ef4444' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', flexWrap: 'wrap' }}>
+            <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '700', color: 'var(--c-text)', lineHeight: '1.3' }}>{r.titulo}</h3>
+            <span style={{ fontSize: '12px', fontWeight: '700', color: '#ef4444', background: '#fef2f2', padding: '3px 10px', borderRadius: '20px', flexShrink: 0 }}>
+              {r.reportes_contenido.length} denuncia(s)
+            </span>
+          </div>
+          <p style={{ margin: 0, fontSize: '14px', color: 'var(--c-text-2)', lineHeight: '1.6' }}>{r.descripcion}</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
+            {r.usuario && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: 'var(--c-text-3)' }}>
+                <User size={12} strokeWidth={2} color="var(--c-text-3)" />
+                {r.usuario.nombre} {r.usuario.apellido}
+              </span>
+            )}
+            <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: 'var(--c-text-3)' }}>
+              <Calendar size={12} strokeWidth={2} color="var(--c-text-3)" />
+              {formatDate(r.fecha_reporte)}
+            </span>
+          </div>
+          <a href={`/reports/${r.id}`} target="_blank" rel="noreferrer"
+            style={{ fontSize: '13px', color: '#2563eb', fontWeight: '600', textDecoration: 'none' }}>
+            Ver reporte →
+          </a>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 const AdminReportsPage = () => {
   const navigate = useNavigate();
   const [tab, setTab]                   = useState('reports'); // 'reports' | 'users' | 'stats'
@@ -33,6 +71,7 @@ const AdminReportsPage = () => {
   const [loadingU, setLoadingU]         = useState(false);
   const [updating, setUpdating]         = useState(null);
   const [observaciones, setObservaciones] = useState({});
+  const [motivosRechazo, setMotivosRechazo] = useState({});
   const [search, setSearch]             = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [searchUsers, setSearchUsers]   = useState('');
@@ -44,10 +83,14 @@ const AdminReportsPage = () => {
       .then(({ reportes }) => setReports(reportes))
       .catch((err) => toast.error(err.message))
       .finally(() => setLoadingR(false));
+    // Cargar usuarios al montar para que el select de asignación funcione desde el inicio
+    getUsuarios()
+      .then(({ usuarios }) => setUsuarios(usuarios))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
-    if (tab === 'users' && usuarios.length === 0) {
+    if (tab === 'users' && !loadingU && usuarios.length === 0) {
       setLoadingU(true);
       getUsuarios()
         .then(({ usuarios }) => setUsuarios(usuarios))
@@ -57,11 +100,17 @@ const AdminReportsPage = () => {
   }, [tab]);
 
   const handleStatusChange = async (id, estado) => {
+    // Si rechaza, el motivo es obligatorio
+    if (estado === 'rechazado' && !motivosRechazo[id]?.trim()) {
+      toast.error('Debes escribir un motivo de rechazo antes de rechazar');
+      return;
+    }
     setUpdating(id);
     try {
-      const { reporte } = await updateReportStatus(id, estado, observaciones[id] || '');
+      const { reporte } = await updateReportStatus(id, estado, observaciones[id] || '', motivosRechazo[id] || '');
       setReports((prev) => prev.map((r) => r.id === id ? { ...r, estado: reporte.estado } : r));
       setObservaciones((prev) => ({ ...prev, [id]: '' }));
+      setMotivosRechazo((prev) => ({ ...prev, [id]: '' }));
       toast.success('Estado actualizado');
     } catch (err) {
       toast.error(err.message);
@@ -104,6 +153,16 @@ const AdminReportsPage = () => {
     }
   };
 
+  const handleAsignar = async (reporteId, funcionarioId) => {
+    try {
+      await assignReport(reporteId, funcionarioId || null);
+      setReports((prev) => prev.map((r) => r.id === reporteId ? { ...r, asignado_a: funcionarioId || null } : r));
+      toast.success(funcionarioId ? 'Reporte asignado' : 'Asignación removida');
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+
   // Stats
   const total      = reports.length;
   const pendientes = reports.filter((r) => r.estado?.nombre === 'pendiente').length;
@@ -120,6 +179,25 @@ const AdminReportsPage = () => {
     return Object.entries(map).sort((a, b) => b[1] - a[1]);
   }, [reports]);
   const maxCat = catStats[0]?.[1] || 1;
+
+  // Tendencia por semana (últimas 8 semanas)
+  const weeklyTrend = useMemo(() => {
+    const weeks = {};
+    const now = new Date();
+    for (let i = 7; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i * 7);
+      const key = `${d.getFullYear()}-W${Math.ceil(d.getDate() / 7)}`;
+      weeks[key] = { label: `S${8 - i}`, count: 0 };
+    }
+    reports.forEach((r) => {
+      const d = new Date(r.fecha_reporte);
+      const key = `${d.getFullYear()}-W${Math.ceil(d.getDate() / 7)}`;
+      if (weeks[key]) weeks[key].count++;
+    });
+    return Object.values(weeks);
+  }, [reports]);
+  const maxWeek = Math.max(...weeklyTrend.map((w) => w.count), 1);
 
   // Filtered reports
   const filtered = useMemo(() => reports.filter((r) => {
@@ -152,7 +230,7 @@ const AdminReportsPage = () => {
         <div style={s.statsGrid}>
           <StatCard icon={FileText}    label="Total reportes" value={total}      color="#2563eb" />
           <StatCard icon={BarChart2}   label="Pendientes"     value={pendientes} color="#f59e0b" />
-          <StatCard icon={ChevronDown} label="En proceso"     value={enProceso}  color="#3b82f6" />
+          <StatCard icon={Clock}       label="En proceso"     value={enProceso}  color="#3b82f6" />
           <StatCard icon={CheckCircle} label="Resueltos"      value={resueltos}  color="#16a34a" />
         </div>
 
@@ -167,6 +245,14 @@ const AdminReportsPage = () => {
             </button>
             <button onClick={() => setTab('users')} style={{ ...s.tab, ...(tab === 'users' ? s.tabActive : {}) }}>
               <Users size={15} strokeWidth={2} /> Usuarios
+            </button>
+            <button onClick={() => setTab('flagged')} style={{ ...s.tab, ...(tab === 'flagged' ? s.tabActive : {}) }}>
+              <UserCheck size={15} strokeWidth={2} /> Reportados
+              {reports.filter((r) => r.reportes_contenido?.length > 0).length > 0 && (
+                <span style={{ background: '#ef4444', color: '#fff', borderRadius: '20px', fontSize: '10px', fontWeight: '700', padding: '1px 6px', marginLeft: '2px' }}>
+                  {reports.filter((r) => r.reportes_contenido?.length > 0).length}
+                </span>
+              )}
             </button>
           </div>
           <button onClick={handleExportCSV} disabled={exporting} style={s.exportBtn}>
@@ -210,6 +296,20 @@ const AdminReportsPage = () => {
                 </div>
               ))}
             </div>
+
+            {/* Tendencia semanal */}
+            <div style={s.card}>
+              <h3 style={{ margin: '0 0 20px', fontSize: '16px', fontWeight: '700', color: 'var(--c-text)' }}>Tendencia semanal (últimas 8 semanas)</h3>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', height: '120px' }}>
+                {weeklyTrend.map((w) => (
+                  <div key={w.label} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', height: '100%', justifyContent: 'flex-end' }}>
+                    <span style={{ fontSize: '11px', color: 'var(--c-text-3)', fontWeight: '600' }}>{w.count || ''}</span>
+                    <div style={{ width: '100%', background: '#2563eb', borderRadius: '4px 4px 0 0', height: `${Math.max((w.count / maxWeek) * 90, w.count > 0 ? 8 : 2)}px`, transition: 'height .3s', opacity: w.count === 0 ? 0.2 : 1 }} />
+                    <span style={{ fontSize: '10px', color: 'var(--c-text-3)' }}>{w.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 
@@ -222,10 +322,15 @@ const AdminReportsPage = () => {
                 <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por título o usuario..." style={s.searchInput} />
                 {search && <button onClick={() => setSearch('')} style={s.clearBtn}><X size={13} color="var(--c-text-3)" /></button>}
               </div>
-              <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} style={s.select}>
-                <option value="">Todos los estados</option>
-                {REPORT_STATUSES.map((st) => <option key={st} value={st}>{STATUS_LABEL[st]}</option>)}
-              </select>
+              <Select
+                value={filterStatus}
+                onChange={setFilterStatus}
+                options={[
+                  { value: '', label: 'Todos los estados' },
+                  ...REPORT_STATUSES.map((st) => ({ value: st, label: STATUS_LABEL[st] })),
+                ]}
+                placeholder="Todos los estados"
+              />
             </div>
             <p style={s.resultsCount}>{filtered.length} reporte(s)</p>
 
@@ -267,12 +372,32 @@ const AdminReportsPage = () => {
                           onChange={(e) => setObservaciones((prev) => ({ ...prev, [r.id]: e.target.value }))}
                           style={s.obsInput}
                         />
-                        <div style={s.selectWrap}>
-                          <select value={estadoNombre} disabled={updating === r.id} onChange={(e) => handleStatusChange(r.id, e.target.value)} style={s.selectAction}>
-                            {REPORT_STATUSES.map((st) => <option key={st} value={st}>{STATUS_LABEL[st]}</option>)}
-                          </select>
-                          <ChevronDown size={14} color="var(--c-text-2)" style={s.selectIcon} />
-                        </div>
+                        {/* Solo mostrar opciones válidas según estado actual */}
+                        {estadoNombre === 'pendiente' ? (
+                          <>
+                            <input
+                              type="text"
+                              placeholder="Motivo de rechazo (obligatorio si rechaza)"
+                              value={motivosRechazo[r.id] || ''}
+                              onChange={(e) => setMotivosRechazo((prev) => ({ ...prev, [r.id]: e.target.value }))}
+                              style={{ ...s.obsInput, borderColor: '#fca5a5' }}
+                            />
+                            <Select
+                              value=""
+                              onChange={(val) => handleStatusChange(r.id, val)}
+                              disabled={updating === r.id}
+                              options={[
+                                { value: 'verificado', label: 'Verificar' },
+                                { value: 'rechazado',  label: 'Rechazar' },
+                              ]}
+                              placeholder="Cambiar estado..."
+                            />
+                          </>
+                        ) : (
+                          <span style={{ fontSize: '12px', color: 'var(--c-text-3)', fontStyle: 'italic' }}>
+                            Estado final — el ciudadano debe reenviar para nueva revisión
+                          </span>
+                        )}
                         {updating === r.id && <span style={s.saving}>Guardando...</span>}
                       </div>
                     </div>
@@ -307,17 +432,15 @@ const AdminReportsPage = () => {
                         <p style={s.userEmail}>{u.correo}</p>
                       </div>
                       <div style={s.userActions}>
-                        <div style={s.selectWrap}>
-                          <select
-                            value={u.rol?.nombre ?? 'ciudadano'}
-                            onChange={(e) => handleChangeRol(u.id, e.target.value)}
-                            style={{ ...s.selectAction, minWidth: '130px' }}
-                          >
-                            <option value="ciudadano">Ciudadano</option>
-                            <option value="administrador">Administrador</option>
-                          </select>
-                          <ChevronDown size={14} color="var(--c-text-2)" style={s.selectIcon} />
-                        </div>
+                        <Select
+                          value={u.rol?.nombre ?? 'ciudadano'}
+                          onChange={(val) => handleChangeRol(u.id, val)}
+                          options={[
+                            { value: 'ciudadano',      label: 'Ciudadano' },
+                            { value: 'administrador',  label: 'Administrador' },
+                          ]}
+                          style={{ minWidth: '140px' }}
+                        />
                         <button
                           onClick={() => setConfirmToggle(u)}
                           style={{ ...s.toggleBtn, background: u.activo ? '#fef2f2' : '#f0fdf4', color: u.activo ? '#dc2626' : '#16a34a' }}
@@ -336,6 +459,12 @@ const AdminReportsPage = () => {
             )}
           </>
         )}
+
+        {/* ── FLAGGED TAB ── */}
+        {tab === 'flagged' && (
+          <FlaggedTab reports={reports} formatDate={formatDate} />
+        )}
+
       </div>
 
       <ConfirmModal
@@ -388,9 +517,6 @@ const s = {
   thumb:        { width: '120px', height: '80px', objectFit: 'cover', borderRadius: '8px' },
   actions:      { display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', paddingTop: '4px', borderTop: '1px solid var(--c-bg)' },
   obsInput:     { flex: 1, minWidth: '160px', padding: '9px 12px', borderRadius: '8px', border: '1px solid var(--c-border)', fontSize: '13px', fontFamily: 'inherit', color: 'var(--c-text)', outline: 'none' },
-  selectWrap:   { position: 'relative', display: 'flex', alignItems: 'center' },
-  selectAction: { padding: '9px 32px 9px 12px', borderRadius: '8px', border: '1px solid var(--c-border)', fontSize: '13px', fontFamily: 'inherit', color: 'var(--c-text)', cursor: 'pointer', appearance: 'none', background: 'var(--c-surface)', outline: 'none' },
-  selectIcon:   { position: 'absolute', right: '10px', pointerEvents: 'none' },
   saving:       { fontSize: '12px', color: '#2563eb', fontWeight: '600' },
 
   userRow:      { display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' },

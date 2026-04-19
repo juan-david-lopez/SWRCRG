@@ -30,8 +30,10 @@ const listarPorReporte = async (reporte_id) => {
   });
 };
 
-const eliminar = async (id, usuario_id) => {
-  const comentario = await ComentarioReporte.findOne({ where: { id, usuario_id } });
+const eliminar = async (id, usuario_id, rol) => {
+  // Admin puede eliminar cualquier comentario, ciudadano solo los suyos
+  const where = rol === 'administrador' ? { id } : { id, usuario_id };
+  const comentario = await ComentarioReporte.findOne({ where });
   if (!comentario) return null;
   await comentario.destroy();
   return comentario;
