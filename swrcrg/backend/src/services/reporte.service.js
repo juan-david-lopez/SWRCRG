@@ -127,7 +127,7 @@ const cambiarEstado = async (id, estado_nombre, admin_id, observacion, motivo_re
     usuario_id: reporte.usuario_id,
     titulo,
     mensaje,
-    tipo: estado_nombre === 'verificado' ? 'reporte_verificado' : 'reporte_rechazado',
+    tipo: estado_nombre === 'verificado' ? 'cambio_estado' : 'reporte_rechazado',
   });
 
   return reporte.reload({ include: [{ model: EstadoReporte, as: 'estado' }] });

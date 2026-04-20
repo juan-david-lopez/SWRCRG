@@ -22,6 +22,7 @@ const globalLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Demasiadas solicitudes, intenta más tarde' },
+  skip: () => process.env.NODE_ENV === 'test',
 });
 
 // Rate limiting estricto para auth
@@ -29,6 +30,7 @@ const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
   message: { error: 'Demasiados intentos de autenticación, intenta en 15 minutos' },
+  skip: () => process.env.NODE_ENV === 'test',
 });
 
 app.use(cors());
