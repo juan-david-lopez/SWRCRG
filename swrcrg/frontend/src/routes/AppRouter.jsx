@@ -17,6 +17,7 @@ import TerminosPage      from '../pages/legal/TerminosPage';
 import CookiesPage       from '../pages/legal/CookiesPage';
 import ProtectedRoute    from './ProtectedRoute';
 import AdminRoute        from './AdminRoute';
+import CiudadanoRoute    from './CiudadanoRoute';
 
 const AppRouter = () => (
   <BrowserRouter>
@@ -34,12 +35,18 @@ const AppRouter = () => (
         <Route path="/cookies"     element={<CookiesPage />} />
         <Route path="/acceso-denegado" element={<AccessDenied />} />
 
-        <Route element={<ProtectedRoute />}>
+        {/* Solo ciudadanos */}
+        <Route element={<CiudadanoRoute />}>
           <Route path="/reports/create" element={<CreateReportPage />} />
           <Route path="/mis-reportes"   element={<MyReportsPage />} />
-          <Route path="/perfil"         element={<ProfilePage />} />
         </Route>
 
+        {/* Cualquier usuario autenticado */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/perfil" element={<ProfilePage />} />
+        </Route>
+
+        {/* Solo administradores */}
         <Route element={<AdminRoute />}>
           <Route path="/admin/reports" element={<AdminReportsPage />} />
         </Route>

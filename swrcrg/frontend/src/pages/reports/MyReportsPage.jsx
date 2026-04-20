@@ -90,7 +90,7 @@ const MyReportCard = ({ report, onEdit, onDelete, onReenviar }) => {
 };
 
 /* ── Edit inline form ── */
-const EditModal = ({ report, onSave, onCancel }) => {
+const EditModal = ({ report, onSave, onCancel, isReenvio = false }) => {
   const [form, setForm] = useState({ titulo: report.titulo, descripcion: report.descripcion, direccion_referencia: report.direccion_referencia ?? '' });
   const [saving, setSaving] = useState(false);
 
@@ -108,9 +108,12 @@ const EditModal = ({ report, onSave, onCancel }) => {
     <div style={em.overlay} onClick={onCancel}>
       <form style={em.modal} onSubmit={handleSubmit} onClick={(e) => e.stopPropagation()}>
         <div style={em.header}>
-          <h3 style={em.title}>Editar reporte</h3>
+          <h3 style={em.title}>{isReenvio ? 'Editar y reenviar reporte' : 'Editar reporte'}</h3>
           <button type="button" onClick={onCancel} style={em.closeBtn}><X size={18} strokeWidth={2} /></button>
         </div>
+        {isReenvio && (
+          <p style={em.reenvioHint}>Corrige los campos necesarios y luego reenvía para revisión.</p>
+        )}
         {[
           { name: 'titulo',               label: 'Título',              rows: 1 },
           { name: 'descripcion',          label: 'Descripción',         rows: 3 },
@@ -127,8 +130,8 @@ const EditModal = ({ report, onSave, onCancel }) => {
         <div style={em.actions}>
           <button type="button" onClick={onCancel} style={em.cancelBtn}>Cancelar</button>
           <button type="submit" disabled={saving} style={{ ...em.saveBtn, opacity: saving ? 0.7 : 1 }}>
-            <Check size={15} strokeWidth={2.5} />
-            {saving ? 'Guardando...' : 'Guardar'}
+            {isReenvio ? <RotateCcw size={15} strokeWidth={2.5} /> : <Check size={15} strokeWidth={2.5} />}
+            {saving ? (isReenvio ? 'Reenviando...' : 'Guardando...') : (isReenvio ? 'Guardar y reenviar' : 'Guardar')}
           </button>
         </div>
       </form>
@@ -159,6 +162,7 @@ const MyReportsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState('');
   const [editing, setEditing] = useState(null);
+  const [reenvioTarget, setReenvioTarget] = useState(null);
   const [deleting, setDeleting] = useState(null);
   const [reenviando, setReenviando] = useState(null);
 
@@ -176,12 +180,18 @@ const MyReportsPage = () => {
     toast.success('Reporte actualizado');
   };
 
-  const handleReenviar = async (report) => {
-    setReenviando(report.id);
+  const handleReenviar = (report) => {
+    setReenvioTarget(report);
+  };
+
+  const handleSaveReenvio = async (id, data) => {
+    setReenviando(id);
     try {
-      const { reporte } = await reenviarReporte(report.id);
-      setReports((prev) => prev.map((r) => r.id === report.id ? { ...r, estado: reporte.estado, motivo_rechazo: null } : r));
-      toast.success('Reporte reenviado para revisión');
+      await editReport(id, data);
+      const { reporte } = await reenviarReporte(id);
+      setReports((prev) => prev.map((r) => r.id === id ? { ...r, ...reporte, estado: reporte.estado, motivo_rechazo: null } : r));
+      setReenvioTarget(null);
+      toast.success('Reporte editado y reenviado para revisión');
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -250,6 +260,10 @@ const MyReportsPage = () => {
 
       {editing && (
         <EditModal report={editing} onSave={handleSaveEdit} onCancel={() => setEditing(null)} />
+      )}
+
+      {reenvioTarget && (
+        <EditModal report={reenvioTarget} onSave={handleSaveReenvio} onCancel={() => setReenvioTarget(null)} isReenvio />
       )}
 
       <ConfirmModal
@@ -328,6 +342,7 @@ const em = {
   actions:   { display: 'flex', gap: '10px', marginTop: '4px' },
   cancelBtn: { flex: 1, padding: '11px', borderRadius: '8px', border: '1px solid var(--c-border)', background: 'var(--c-surface)', fontSize: '14px', fontWeight: '600', color: 'var(--c-text-2)', cursor: 'pointer', fontFamily: 'inherit' },
   saveBtn:   { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '8px', border: 'none', background: '#2563eb', fontSize: '14px', fontWeight: '600', color: '#fff', cursor: 'pointer', fontFamily: 'inherit' },
+  reenvioHint: { margin: 0, fontSize: '13px', color: '#7f1d1d', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '10px 12px', lineHeight: '1.5' },
 };
 
 export default MyReportsPage;

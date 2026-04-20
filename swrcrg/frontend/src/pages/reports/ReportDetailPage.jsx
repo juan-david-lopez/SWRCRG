@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getReport, getReportHistory, getReportComments, addComment, deleteComment, voteReport, reportContent, reenviarReporte } from '../../services/report.service';
+import { getReport, getReportHistory, getReportComments, addComment, deleteComment, voteReport, reportContent, reenviarReporte, editReport } from '../../services/report.service';
 import { STATUS_COLORS, STATUS_LABEL } from '../../constants/reportStatus';
 import { useAuth } from '../../context/AuthContext';
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
-import { Send, Trash2, ThumbsUp, Share2, MapPin, User, Calendar, Flag, RotateCcw, XCircle, CheckCircle2 } from 'lucide-react';
+import { Send, Trash2, ThumbsUp, Share2, MapPin, User, Calendar, Flag, RotateCcw, XCircle, CheckCircle2, X } from 'lucide-react';
 import { toast } from '../../components/Toast';
 import Lightbox from '../../components/Lightbox';
 import { TILE_URL, TILE_ATTR, createStatusIcon } from '../../components/MapMarkers';
@@ -28,6 +28,7 @@ const ReportDetailPage = () => {
   const [sending,     setSending]     = useState(false);
   const [commentErr,  setCommentErr]  = useState('');
   const [lightboxIdx, setLightboxIdx] = useState(null);
+  const [showEditReenvio, setShowEditReenvio] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -106,17 +107,21 @@ const ReportDetailPage = () => {
     }
   };
 
-  const handleReenviar = async () => {
+  const handleReenviar = () => {
+    setShowEditReenvio(true);
+  };
+
+  const handleSaveReenvio = async (data) => {
     try {
+      await editReport(id, data);
       const { reporte: updated } = await reenviarReporte(id);
-      setReporte((prev) => ({ ...prev, estado: updated.estado, motivo_rechazo: null }));
-      toast.success('Reporte reenviado para revisión');
+      setReporte((prev) => ({ ...prev, ...data, estado: updated.estado, motivo_rechazo: null }));
+      setShowEditReenvio(false);
+      toast.success('Reporte editado y reenviado para revisión');
     } catch (err) {
       toast.error(err.message);
     }
-  };
-
-  if (loading) return <p style={st.center}>Cargando...</p>;
+  };  if (loading) return <p style={st.center}>Cargando...</p>;
   if (error)   return <p style={{ ...st.center, color: '#dc2626' }}>{error}</p>;
   if (!reporte) return null;
 
@@ -225,8 +230,8 @@ const ReportDetailPage = () => {
         )}
       </div>
 
-      {/* Historial */}
-      {historial.length > 0 && (
+      {/* Historial — solo visible para el admin o el dueño del reporte */}
+      {historial.length > 0 && (isAdmin || user?.id === reporte.usuario_id) && (
         <div style={st.section}>
           <h3 style={st.sectionTitle}>Historial de estados</h3>
           <div style={st.timeline}>
@@ -311,6 +316,15 @@ const ReportDetailPage = () => {
           onNext={() => setLightboxIdx((i) => (i + 1) % reporte.imagenes.length)}
         />
       )}
+
+      {/* Modal editar y reenviar */}
+      {showEditReenvio && reporte && (
+        <EditReenvioModal
+          reporte={reporte}
+          onSave={handleSaveReenvio}
+          onCancel={() => setShowEditReenvio(false)}
+        />
+      )}
     </div>
   );};
 
@@ -358,6 +372,73 @@ const st = {  wrapper:        { maxWidth: '720px', margin: '0 auto', padding: '3
   rechazoMsg:     { margin: 0, fontSize: '14px', color: '#7f1d1d', lineHeight: '1.5' },
   reenviarBtn:    { alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 18px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit' },
   center:         { textAlign: 'center', marginTop: '80px', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", color: 'var(--c-text-3)' },
+};
+
+const EditReenvioModal = ({ reporte, onSave, onCancel }) => {
+  const [form, setForm] = useState({
+    titulo: reporte.titulo,
+    descripcion: reporte.descripcion,
+    direccion_referencia: reporte.direccion_referencia ?? '',
+  });
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await onSave(form);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div style={em.overlay} onClick={onCancel}>
+      <form style={em.modal} onSubmit={handleSubmit} onClick={(e) => e.stopPropagation()}>
+        <div style={em.header}>
+          <h3 style={em.title}>Editar y reenviar reporte</h3>
+          <button type="button" onClick={onCancel} style={em.closeBtn}><X size={18} strokeWidth={2} /></button>
+        </div>
+        <p style={em.hint}>Corrige los campos necesarios y luego reenvía para revisión.</p>
+        {[
+          { name: 'titulo',               label: 'Título',               rows: 1 },
+          { name: 'descripcion',          label: 'Descripción',          rows: 3 },
+          { name: 'direccion_referencia', label: 'Dirección referencia',  rows: 1, optional: true },
+        ].map(({ name, label, rows, optional }) => (
+          <div key={name} style={em.field}>
+            <label style={em.label}>{label}{optional && <span style={em.opt}> (opcional)</span>}</label>
+            {rows > 1
+              ? <textarea name={name} value={form[name]} onChange={(e) => setForm({ ...form, [name]: e.target.value })} rows={rows} style={em.input} />
+              : <input    name={name} value={form[name]} onChange={(e) => setForm({ ...form, [name]: e.target.value })} style={em.input} />
+            }
+          </div>
+        ))}
+        <div style={em.actions}>
+          <button type="button" onClick={onCancel} style={em.cancelBtn}>Cancelar</button>
+          <button type="submit" disabled={saving} style={{ ...em.saveBtn, opacity: saving ? 0.7 : 1 }}>
+            <RotateCcw size={15} strokeWidth={2.5} />
+            {saving ? 'Reenviando...' : 'Guardar y reenviar'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+const em = {
+  overlay:  { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" },
+  modal:    { background: 'var(--c-surface)', borderRadius: '16px', padding: '24px', maxWidth: '480px', width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column', gap: '14px' },
+  header:   { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+  title:    { margin: 0, fontSize: '17px', fontWeight: '700', color: 'var(--c-text)' },
+  closeBtn: { background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', color: 'var(--c-text-2)', padding: '4px' },
+  hint:     { margin: 0, fontSize: '13px', color: '#7f1d1d', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '10px 12px', lineHeight: '1.5' },
+  field:    { display: 'flex', flexDirection: 'column', gap: '6px' },
+  label:    { fontSize: '13px', fontWeight: '600', color: 'var(--c-text)' },
+  opt:      { fontWeight: '400', color: 'var(--c-text-3)' },
+  input:    { border: '1px solid var(--c-border)', borderRadius: '8px', padding: '10px 14px', fontSize: '14px', fontFamily: 'inherit', color: 'var(--c-text)', outline: 'none', resize: 'vertical' },
+  actions:  { display: 'flex', gap: '10px', marginTop: '4px' },
+  cancelBtn:{ flex: 1, padding: '11px', borderRadius: '8px', border: '1px solid var(--c-border)', background: 'var(--c-surface)', fontSize: '14px', fontWeight: '600', color: 'var(--c-text-2)', cursor: 'pointer', fontFamily: 'inherit' },
+  saveBtn:  { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '11px', borderRadius: '8px', border: 'none', background: '#2563eb', fontSize: '14px', fontWeight: '600', color: '#fff', cursor: 'pointer', fontFamily: 'inherit' },
 };
 
 export default ReportDetailPage;

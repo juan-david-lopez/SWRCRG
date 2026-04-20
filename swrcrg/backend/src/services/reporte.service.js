@@ -4,8 +4,6 @@ const { Reporte, Usuario, EstadoReporte, CategoriaReporte, ImagenReporte, Histor
 const { Op } = Sequelize;
 const notificacionService = require('./notificacion.service');
 
-const { Op } = require('sequelize').default || require('sequelize');
-
 const INCLUDE_BASE = (extra = []) => [
   { model: Usuario,          as: 'usuario',   attributes: ['id', 'nombre', 'apellido'] },
   { model: EstadoReporte,    as: 'estado',    attributes: ['id', 'nombre'] },

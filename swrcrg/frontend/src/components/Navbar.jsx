@@ -27,14 +27,17 @@ const Navbar = () => {
     fontSize: '14px',
   });
 
+  const isCiudadano = user?.rol === 'ciudadano';
+  const isAdmin     = user?.rol === 'administrador';
+
   const links = (
     <>
-      <NavLink to="/"       style={navStyle} onClick={close}>Inicio</NavLink>
+      <NavLink to="/"        style={navStyle} onClick={close}>Inicio</NavLink>
       <NavLink to="/reports" style={navStyle} onClick={close}>Reportes</NavLink>
-      <NavLink to="/mapa"   style={navStyle} onClick={close}>Mapa</NavLink>
-      {user && <NavLink to="/reports/create" style={navStyle} onClick={close}>Crear reporte</NavLink>}
-      {user && <NavLink to="/mis-reportes"   style={navStyle} onClick={close}>Mis reportes</NavLink>}
-      {user?.rol === 'administrador' && (
+      <NavLink to="/mapa"    style={navStyle} onClick={close}>Mapa</NavLink>
+      {isCiudadano && <NavLink to="/reports/create" style={navStyle} onClick={close}>Crear reporte</NavLink>}
+      {isCiudadano && <NavLink to="/mis-reportes"   style={navStyle} onClick={close}>Mis reportes</NavLink>}
+      {isAdmin && (
         <NavLink to="/admin/reports" style={navStyle} onClick={close}>Panel admin</NavLink>
       )}
     </>
