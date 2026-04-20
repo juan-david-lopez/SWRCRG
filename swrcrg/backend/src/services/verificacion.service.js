@@ -2,6 +2,7 @@
 
 const { CodigoVerificacion, Usuario } = require('../models');
 const { Op } = require('sequelize');
+const { enviarCodigoVerificacion } = require('./email.service');
 
 /**
  * Genera un código de 6 dígitos, lo guarda en BD y lo devuelve.
@@ -25,10 +26,9 @@ const enviarCodigo = async (correo) => {
 
   await CodigoVerificacion.create({ correo: correoNorm, codigo, expira_en });
 
-  // TODO: en producción enviar email aquí
-  // await emailService.send({ to: correoNorm, subject: 'Tu código de verificación', text: `Tu código es: ${codigo}` });
+  await enviarCodigoVerificacion(correoNorm, codigo);
 
-  return { codigo }; // solo para desarrollo
+  return { codigo };
 };
 
 /**
