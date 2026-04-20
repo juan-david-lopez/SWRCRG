@@ -167,14 +167,14 @@ const MapPage = () => {
 
 /* ── Estilos del tooltip ── */
 const tp = {
-  wrap:  { fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", minWidth: '200px', maxWidth: '240px', padding: 0, overflow: 'hidden' },
+  wrap:  { fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", minWidth: '200px', maxWidth: '240px', padding: 0, overflow: 'hidden', whiteSpace: 'normal', wordBreak: 'break-word' },
   imgWrap:{ width: '100%', height: '110px', overflow: 'hidden' },
   img:   { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
   body:  { padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '5px' },
-  badge: { fontSize: '10px', fontWeight: '700', padding: '2px 8px', borderRadius: '20px', alignSelf: 'flex-start', textTransform: 'uppercase', letterSpacing: '0.3px' },
-  title: { margin: 0, fontSize: '13px', fontWeight: '700', color: '#0f172a', lineHeight: '1.3' },
+  badge: { fontSize: '10px', fontWeight: '700', padding: '2px 8px', borderRadius: '20px', alignSelf: 'flex-start', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' },
+  title: { margin: 0, fontSize: '13px', fontWeight: '700', color: '#0f172a', lineHeight: '1.4', whiteSpace: 'normal', wordBreak: 'break-word' },
   cat:   { fontSize: '11px', color: '#7c3aed', background: '#ede9fe', padding: '2px 8px', borderRadius: '20px', alignSelf: 'flex-start' },
-  dir:   { margin: 0, fontSize: '11px', color: '#64748b' },
+  dir:   { margin: 0, fontSize: '11px', color: '#64748b', whiteSpace: 'normal', wordBreak: 'break-word' },
   hint:  { margin: 0, fontSize: '11px', color: '#94a3b8', fontStyle: 'italic' },
 };
 

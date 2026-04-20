@@ -123,6 +123,9 @@ p { margin: 0; }
   background: #fff !important;
   overflow: hidden !important;
   pointer-events: none;
+  white-space: normal !important;
+  word-break: break-word !important;
+  max-width: 240px !important;
 }
 .swrcrg-tooltip::before {
   border-top-color: #fff !important;

@@ -233,8 +233,6 @@ const Home = () => {
               <p style={s.footerColTitle}>Cuenta</p>
               <Link to="/register" style={s.footerLink}>Crear cuenta</Link>
               <Link to="/login" style={s.footerLink}>Iniciar sesión</Link>
-              <Link to="/mis-reportes" style={s.footerLink}>Mis reportes</Link>
-              <Link to="/perfil" style={s.footerLink}>Perfil</Link>
             </div>
             <div>
               <p style={s.footerColTitle}>Legal</p>

@@ -315,7 +315,9 @@ const ReportsListPage = () => {
             onChange={setFilterCat}
             options={[
               { value: '', label: 'Todas las categorías' },
-              ...categorias.map((c) => ({ value: c.id, label: c.nombre.replace(/_/g, ' ') })),
+              ...categorias
+                .map((c) => ({ value: c.id, label: c.nombre.replace(/_/g, ' ').toUpperCase() }))
+                .sort((a, b) => a.label.localeCompare(b.label)),
             ]}
             placeholder="Todas las categorías"
           />
