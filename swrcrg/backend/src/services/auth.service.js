@@ -4,9 +4,17 @@ const bcrypt  = require('bcryptjs');
 const jwt     = require('jsonwebtoken');
 const { Usuario, Rol } = require('../models');
 const { JWT_SECRET, JWT_EXPIRES_IN } = require('../config/env');
+const { verificarCodigo } = require('./verificacion.service');
 
-const register = async ({ nombre, apellido, correo, contrasena, telefono, rol: rolSolicitado }, callerRol) => {
+const register = async ({ nombre, apellido, correo, contrasena, telefono, rol: rolSolicitado, codigo }, callerRol) => {
   const correoNorm = correo.trim().toLowerCase();
+
+  // El registro por admin no requiere código de verificación
+  if (callerRol !== 'administrador') {
+    if (!codigo) throw Object.assign(new Error('El código de verificación es obligatorio'), { status: 400 });
+    await verificarCodigo(correoNorm, codigo);
+  }
+
   const existing = await Usuario.findOne({ where: { correo: correoNorm } });
   if (existing) throw Object.assign(new Error('El correo ya está registrado'), { status: 409 });
 

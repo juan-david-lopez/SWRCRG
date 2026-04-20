@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Mail, Lock, Phone, Eye, EyeOff, ArrowLeft, CheckCircle } from 'lucide-react';
-import { register } from '../services/auth.service';
+import { User, Mail, Lock, Phone, Eye, EyeOff, ArrowLeft, CheckCircle, ShieldCheck } from 'lucide-react';
+import { register, sendVerificationCode } from '../services/auth.service';
 import { toast } from '../components/Toast';
 
 const INITIAL = { nombre: '', apellido: '', correo: '', contrasena: '', confirmar: '', telefono: '' };
@@ -58,6 +58,156 @@ const IconInput = ({ icon: Icon, name, type = 'text', value, placeholder, onChan
   </div>
 );
 
+/* ── Paso 2: ingreso del código de 6 dígitos ── */
+const VerificationStep = ({ correo, formData, onBack, onSuccess }) => {
+  const [digits, setDigits]     = useState(['', '', '', '', '', '']);
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState('');
+  const [resending, setResending] = useState(false);
+  const [countdown, setCountdown] = useState(60);
+  const inputRefs = useRef([]);
+
+  useEffect(() => {
+    inputRefs.current[0]?.focus();
+  }, []);
+
+  useEffect(() => {
+    if (countdown <= 0) return;
+    const t = setTimeout(() => setCountdown(c => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [countdown]);
+
+  const handleDigit = (index, value) => {
+    if (!/^\d*$/.test(value)) return;
+    const next = [...digits];
+    next[index] = value.slice(-1);
+    setDigits(next);
+    setError('');
+    if (value && index < 5) inputRefs.current[index + 1]?.focus();
+  };
+
+  const handleKeyDown = (index, e) => {
+    if (e.key === 'Backspace' && !digits[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handlePaste = (e) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    if (!pasted) return;
+    const next = [...digits];
+    pasted.split('').forEach((d, i) => { next[i] = d; });
+    setDigits(next);
+    inputRefs.current[Math.min(pasted.length, 5)]?.focus();
+  };
+
+  const handleResend = async () => {
+    setResending(true);
+    try {
+      const res = await sendVerificationCode(correo);
+      setCountdown(60);
+      setDigits(['', '', '', '', '', '']);
+      setError('');
+      inputRefs.current[0]?.focus();
+      if (res.codigo) {
+        toast.success(`[DEV] Código: ${res.codigo}`);
+      } else {
+        toast.success('Código reenviado a tu correo');
+      }
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setResending(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const codigo = digits.join('');
+    if (codigo.length < 6) return setError('Ingresa los 6 dígitos del código');
+    setLoading(true);
+    setError('');
+    try {
+      const { nombre, apellido, contrasena, telefono } = formData;
+      await register({ nombre, apellido, correo, contrasena, telefono, codigo });
+      toast.success('¡Cuenta creada exitosamente!');
+      onSuccess();
+    } catch (err) {
+      setError(err.message);
+      setDigits(['', '', '', '', '', '']);
+      inputRefs.current[0]?.focus();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={s.formInner}>
+      <button type="button" onClick={onBack} style={{ ...s.backLink, background: 'none', border: 'none', cursor: 'pointer' }}>
+        <ArrowLeft size={14} strokeWidth={2} /> Volver
+      </button>
+
+      <div style={{ marginBottom: '28px' }}>
+        <span style={s.brand}>SWRCRG</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+          <ShieldCheck size={28} color="#2563eb" strokeWidth={2} />
+          <h1 style={{ ...s.title, margin: 0 }}>Verifica tu correo</h1>
+        </div>
+        <p style={s.subtitle}>
+          Enviamos un código de 6 dígitos a<br />
+          <strong style={{ color: 'var(--c-text)' }}>{correo}</strong>
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        {/* Inputs de dígitos */}
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }} onPaste={handlePaste}>
+          {digits.map((d, i) => (
+            <input
+              key={i}
+              ref={el => inputRefs.current[i] = el}
+              type="text"
+              inputMode="numeric"
+              maxLength={1}
+              value={d}
+              onChange={e => handleDigit(i, e.target.value)}
+              onKeyDown={e => handleKeyDown(i, e)}
+              style={{
+                width: '52px', height: '60px',
+                textAlign: 'center', fontSize: '24px', fontWeight: '700',
+                border: `2px solid ${error ? '#ef4444' : d ? '#2563eb' : 'var(--c-border)'}`,
+                borderRadius: '12px', outline: 'none',
+                background: 'var(--c-bg)', color: 'var(--c-text)',
+                fontFamily: 'inherit', transition: 'border-color .15s',
+              }}
+            />
+          ))}
+        </div>
+
+        {error && <p style={s.errorBox}>{error}</p>}
+
+        <button type="submit" disabled={loading} style={{ ...s.btn, opacity: loading ? 0.7 : 1 }}>
+          {loading ? 'Verificando...' : 'Verificar y crear cuenta'}
+        </button>
+
+        <p style={{ textAlign: 'center', fontSize: '14px', color: 'var(--c-text-2)', margin: 0 }}>
+          ¿No recibiste el código?{' '}
+          {countdown > 0 ? (
+            <span style={{ color: 'var(--c-text-3)' }}>Reenviar en {countdown}s</span>
+          ) : (
+            <button type="button" onClick={handleResend} disabled={resending}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#2563eb', fontWeight: '700', fontSize: '14px', fontFamily: 'inherit', padding: 0 }}>
+              {resending ? 'Enviando...' : 'Reenviar código'}
+            </button>
+          )}
+        </p>
+      </form>
+    </div>
+  );
+};
+
+/* ── Componente principal ── */
 const RegisterPage = () => {
   const navigate = useNavigate();
   const [form, setForm]         = useState(INITIAL);
@@ -66,6 +216,7 @@ const RegisterPage = () => {
   const [error, setError]       = useState('');
   const [showPwd, setShowPwd]   = useState(false);
   const [showConf, setShowConf] = useState(false);
+  const [step, setStep]         = useState('form'); // 'form' | 'verify'
 
   const handleChange = (e) => { setForm({ ...form, [e.target.name]: e.target.value }); setError(''); };
   const handleBlur   = (e) => setTouched({ ...touched, [e.target.name]: true });
@@ -89,10 +240,14 @@ const RegisterPage = () => {
     if (err) return setError(err);
     setError(''); setLoading(true);
     try {
-      const { nombre, apellido, correo, contrasena, telefono } = form;
-      await register({ nombre, apellido, correo, contrasena, telefono });
-      toast.success('¡Cuenta creada exitosamente!');
-      navigate('/login');
+      const res = await sendVerificationCode(form.correo);
+      // En desarrollo el código viene en la respuesta
+      if (res.codigo) {
+        toast.success(`[DEV] Tu código es: ${res.codigo}`);
+      } else {
+        toast.success('Código enviado a tu correo');
+      }
+      setStep('verify');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -131,77 +286,86 @@ const RegisterPage = () => {
         </div>
       </div>
 
-      {/* ── Panel derecho: formulario ── */}
+      {/* ── Panel derecho ── */}
       <div style={s.formPanel}>
-        <div style={s.formInner}>
-          <Link to="/" style={s.backLink}>
-            <ArrowLeft size={14} strokeWidth={2} /> Volver al inicio
-          </Link>
+        {step === 'verify' ? (
+          <VerificationStep
+            correo={form.correo}
+            formData={form}
+            onBack={() => setStep('form')}
+            onSuccess={() => navigate('/login')}
+          />
+        ) : (
+          <div style={s.formInner}>
+            <Link to="/" style={s.backLink}>
+              <ArrowLeft size={14} strokeWidth={2} /> Volver al inicio
+            </Link>
 
-          <div style={{ marginBottom: '28px' }}>
-            <span style={s.brand}>SWRCRG</span>
-            <h1 style={s.title}>Crear cuenta</h1>
-            <p style={s.subtitle}>Únete a la comunidad ciudadana.</p>
-          </div>
-
-          <form onSubmit={handleSubmit} style={s.form} noValidate>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <IconInput icon={User} name="nombre"   value={form.nombre}   placeholder="Nombre"   onChange={handleChange} onBlur={handleBlur} error={fieldError('nombre')} />
-              <IconInput icon={User} name="apellido" value={form.apellido} placeholder="Apellido" onChange={handleChange} onBlur={handleBlur} error={fieldError('apellido')} />
+            <div style={{ marginBottom: '28px' }}>
+              <span style={s.brand}>SWRCRG</span>
+              <h1 style={s.title}>Crear cuenta</h1>
+              <p style={s.subtitle}>Únete a la comunidad ciudadana.</p>
             </div>
 
-            <IconInput icon={Mail} name="correo" value={form.correo} placeholder="Correo electrónico" onChange={handleChange} onBlur={handleBlur} error={fieldError('correo')} type="email" />
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', border: `1px solid ${fieldError('contrasena') ? '#ef4444' : 'var(--c-border)'}`, borderRadius: '10px', padding: '11px 14px', background: 'var(--c-bg)' }}>
-                <Lock size={16} strokeWidth={1.8} color={fieldError('contrasena') ? '#ef4444' : 'var(--c-text-3)'} style={{ flexShrink: 0 }} />
-                <input name="contrasena" type={showPwd ? 'text' : 'password'} value={form.contrasena} placeholder="Contraseña"
-                  onChange={handleChange} onBlur={handleBlur}
-                  style={{ flex: 1, border: 'none', outline: 'none', fontSize: '14px', color: 'var(--c-text)', background: 'transparent', fontFamily: 'inherit' }}
-                  autoComplete="new-password" />
-                <button type="button" onClick={() => setShowPwd(!showPwd)} style={eyeBtn} tabIndex={-1}>
-                  {showPwd ? <EyeOff size={16} color="var(--c-text-3)" /> : <Eye size={16} color="var(--c-text-3)" />}
-                </button>
+            <form onSubmit={handleSubmit} style={s.form} noValidate>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <IconInput icon={User} name="nombre"   value={form.nombre}   placeholder="Nombre"   onChange={handleChange} onBlur={handleBlur} error={fieldError('nombre')} />
+                <IconInput icon={User} name="apellido" value={form.apellido} placeholder="Apellido" onChange={handleChange} onBlur={handleBlur} error={fieldError('apellido')} />
               </div>
-              {form.contrasena && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <div style={{ flex: 1, height: '4px', background: 'var(--c-border)', borderRadius: '2px', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${(strength / 5) * 100}%`, background: STRENGTH_COLOR[strength], borderRadius: '2px', transition: 'width .3s, background .3s' }} />
-                  </div>
-                  <span style={{ fontSize: '11px', fontWeight: '600', color: STRENGTH_COLOR[strength], whiteSpace: 'nowrap' }}>{STRENGTH_LABEL[strength]}</span>
+
+              <IconInput icon={Mail} name="correo" value={form.correo} placeholder="Correo electrónico" onChange={handleChange} onBlur={handleBlur} error={fieldError('correo')} type="email" />
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', border: `1px solid ${fieldError('contrasena') ? '#ef4444' : 'var(--c-border)'}`, borderRadius: '10px', padding: '11px 14px', background: 'var(--c-bg)' }}>
+                  <Lock size={16} strokeWidth={1.8} color={fieldError('contrasena') ? '#ef4444' : 'var(--c-text-3)'} style={{ flexShrink: 0 }} />
+                  <input name="contrasena" type={showPwd ? 'text' : 'password'} value={form.contrasena} placeholder="Contraseña"
+                    onChange={handleChange} onBlur={handleBlur}
+                    style={{ flex: 1, border: 'none', outline: 'none', fontSize: '14px', color: 'var(--c-text)', background: 'transparent', fontFamily: 'inherit' }}
+                    autoComplete="new-password" />
+                  <button type="button" onClick={() => setShowPwd(!showPwd)} style={eyeBtn} tabIndex={-1}>
+                    {showPwd ? <EyeOff size={16} color="var(--c-text-3)" /> : <Eye size={16} color="var(--c-text-3)" />}
+                  </button>
                 </div>
-              )}
-              {fieldError('contrasena') && <span style={{ fontSize: '12px', color: '#ef4444' }}>{fieldError('contrasena')}</span>}
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', border: `1px solid ${fieldError('confirmar') ? '#ef4444' : 'var(--c-border)'}`, borderRadius: '10px', padding: '11px 14px', background: 'var(--c-bg)' }}>
-                <Lock size={16} strokeWidth={1.8} color={fieldError('confirmar') ? '#ef4444' : 'var(--c-text-3)'} style={{ flexShrink: 0 }} />
-                <input name="confirmar" type={showConf ? 'text' : 'password'} value={form.confirmar} placeholder="Confirmar contraseña"
-                  onChange={handleChange} onBlur={handleBlur}
-                  style={{ flex: 1, border: 'none', outline: 'none', fontSize: '14px', color: 'var(--c-text)', background: 'transparent', fontFamily: 'inherit' }}
-                  autoComplete="new-password" />
-                <button type="button" onClick={() => setShowConf(!showConf)} style={eyeBtn} tabIndex={-1}>
-                  {showConf ? <EyeOff size={16} color="var(--c-text-3)" /> : <Eye size={16} color="var(--c-text-3)" />}
-                </button>
+                {form.contrasena && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ flex: 1, height: '4px', background: 'var(--c-border)', borderRadius: '2px', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${(strength / 5) * 100}%`, background: STRENGTH_COLOR[strength], borderRadius: '2px', transition: 'width .3s, background .3s' }} />
+                    </div>
+                    <span style={{ fontSize: '11px', fontWeight: '600', color: STRENGTH_COLOR[strength], whiteSpace: 'nowrap' }}>{STRENGTH_LABEL[strength]}</span>
+                  </div>
+                )}
+                {fieldError('contrasena') && <span style={{ fontSize: '12px', color: '#ef4444' }}>{fieldError('contrasena')}</span>}
               </div>
-              {fieldError('confirmar') && <span style={{ fontSize: '12px', color: '#ef4444' }}>{fieldError('confirmar')}</span>}
-            </div>
 
-            <IconInput icon={Phone} name="telefono" value={form.telefono} placeholder="Teléfono (opcional)" onChange={handleChange} onBlur={handleBlur} error={fieldError('telefono')} hint="Opcional" />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', border: `1px solid ${fieldError('confirmar') ? '#ef4444' : 'var(--c-border)'}`, borderRadius: '10px', padding: '11px 14px', background: 'var(--c-bg)' }}>
+                  <Lock size={16} strokeWidth={1.8} color={fieldError('confirmar') ? '#ef4444' : 'var(--c-text-3)'} style={{ flexShrink: 0 }} />
+                  <input name="confirmar" type={showConf ? 'text' : 'password'} value={form.confirmar} placeholder="Confirmar contraseña"
+                    onChange={handleChange} onBlur={handleBlur}
+                    style={{ flex: 1, border: 'none', outline: 'none', fontSize: '14px', color: 'var(--c-text)', background: 'transparent', fontFamily: 'inherit' }}
+                    autoComplete="new-password" />
+                  <button type="button" onClick={() => setShowConf(!showConf)} style={eyeBtn} tabIndex={-1}>
+                    {showConf ? <EyeOff size={16} color="var(--c-text-3)" /> : <Eye size={16} color="var(--c-text-3)" />}
+                  </button>
+                </div>
+                {fieldError('confirmar') && <span style={{ fontSize: '12px', color: '#ef4444' }}>{fieldError('confirmar')}</span>}
+              </div>
 
-            {error && <p style={s.errorBox}>{error}</p>}
+              <IconInput icon={Phone} name="telefono" value={form.telefono} placeholder="Teléfono (opcional)" onChange={handleChange} onBlur={handleBlur} error={fieldError('telefono')} hint="Opcional" />
 
-            <button type="submit" disabled={loading} style={{ ...s.btn, opacity: loading ? 0.7 : 1 }}>
-              {loading ? 'Creando cuenta...' : 'Crear cuenta gratis'}
-            </button>
-          </form>
+              {error && <p style={s.errorBox}>{error}</p>}
 
-          <p style={s.switchText}>
-            ¿Ya tienes cuenta?{' '}
-            <Link to="/login" style={s.switchLink}>Inicia sesión</Link>
-          </p>
-        </div>
+              <button type="submit" disabled={loading} style={{ ...s.btn, opacity: loading ? 0.7 : 1 }}>
+                {loading ? 'Enviando código...' : 'Continuar'}
+              </button>
+            </form>
+
+            <p style={s.switchText}>
+              ¿Ya tienes cuenta?{' '}
+              <Link to="/login" style={s.switchLink}>Inicia sesión</Link>
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -210,7 +374,6 @@ const RegisterPage = () => {
 const s = {
   root:        { display: 'flex', minHeight: '100vh', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" },
 
-  /* Brand panel (izquierdo) */
   brandPanel:  { flex: '0 0 45%', background: 'linear-gradient(145deg, #0f172a 0%, #1e3a5f 50%, #1e40af 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 48px', position: 'relative', overflow: 'hidden' },
   brandInner:  { position: 'relative', zIndex: 1, maxWidth: '400px' },
   brandLogo:   { fontSize: '13px', fontWeight: '800', color: 'rgba(255,255,255,0.5)', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '28px', display: 'block' },
@@ -221,19 +384,17 @@ const s = {
   testimonialText:   { fontSize: '14px', color: 'rgba(255,255,255,0.85)', margin: '0 0 8px', lineHeight: '1.6', fontStyle: 'italic' },
   testimonialAuthor: { fontSize: '12px', color: 'rgba(255,255,255,0.5)', fontWeight: '600' },
 
-  /* Form panel (derecho) */
   formPanel:   { flex: '0 0 55%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--c-surface)', padding: '40px 24px', overflowY: 'auto' },
   formInner:   { width: '100%', maxWidth: '440px', display: 'flex', flexDirection: 'column', gap: '0' },
   backLink:    { display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'var(--c-text-3)', textDecoration: 'none', fontWeight: '500', marginBottom: '28px' },
   brand:       { fontSize: '13px', fontWeight: '800', color: '#2563eb', letterSpacing: '1px', textTransform: 'uppercase', display: 'block', marginBottom: '10px' },
   title:       { fontSize: '26px', fontWeight: '800', color: 'var(--c-text)', margin: '0 0 6px', lineHeight: '1.2' },
-  subtitle:    { fontSize: '14px', color: 'var(--c-text-2)', margin: 0 },
+  subtitle:    { fontSize: '14px', color: 'var(--c-text-2)', margin: 0, lineHeight: '1.6' },
   form:        { display: 'flex', flexDirection: 'column', gap: '14px', margin: '24px 0' },
   btn:         { padding: '13px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '15px', fontWeight: '700', fontFamily: 'inherit' },
   switchText:  { textAlign: 'center', fontSize: '14px', color: 'var(--c-text-2)', margin: 0 },
   switchLink:  { color: '#2563eb', fontWeight: '700', textDecoration: 'none' },
   errorBox:    { fontSize: '13px', color: '#dc2626', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '10px 12px', margin: 0 },
-  successBox:  { fontSize: '13px', color: '#16a34a', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '10px 12px', margin: 0 },
 };
 
 export default RegisterPage;

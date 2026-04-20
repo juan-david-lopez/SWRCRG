@@ -2,7 +2,7 @@
 
 const { Router } = require('express');
 const { body, validationResult } = require('express-validator');
-const { registerUser, loginUser } = require('../controllers/auth.controller');
+const { registerUser, loginUser, sendVerificationCode } = require('../controllers/auth.controller');
 const authMiddleware = require('../middlewares/auth.middleware');
 const authorize = require('../middlewares/authorize.middleware');
 const upload = require('../config/upload');
@@ -38,6 +38,9 @@ const validarRegistro = [
     .optional({ checkFalsy: true })
     .matches(/^[0-9+\-\s()]{7,20}$/).withMessage('Formato de teléfono inválido'),
 ];
+
+// Enviar código de verificación al correo
+router.post('/send-verification-code', sendVerificationCode);
 
 // Registro público — siempre asigna rol ciudadano
 router.post('/register', validarRegistro, registerUser);

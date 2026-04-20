@@ -1,6 +1,7 @@
 import { post, get, put, patch, del } from './api';
 
 export const register    = (data) => post('/auth/register', data);
+export const sendVerificationCode = (correo) => post('/auth/send-verification-code', { correo });
 export const login       = (data) => post('/auth/login', data);
 export const getMe       = ()     => get('/auth/me');
 export const updateMe    = (data) => put('/auth/me', data);
