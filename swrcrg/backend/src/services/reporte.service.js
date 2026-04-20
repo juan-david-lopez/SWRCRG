@@ -1,7 +1,18 @@
 'use strict';
 
-const { Reporte, Usuario, EstadoReporte, CategoriaReporte, ImagenReporte, HistorialEstado, ComentarioReporte } = require('../models');
+const { Reporte, Usuario, EstadoReporte, CategoriaReporte, ImagenReporte, HistorialEstado, ComentarioReporte, Sequelize } = require('../models');
+const { Op } = Sequelize;
 const notificacionService = require('./notificacion.service');
+
+const { Op } = require('sequelize').default || require('sequelize');
+
+const INCLUDE_BASE = (extra = []) => [
+  { model: Usuario,          as: 'usuario',   attributes: ['id', 'nombre', 'apellido'] },
+  { model: EstadoReporte,    as: 'estado',    attributes: ['id', 'nombre'] },
+  { model: CategoriaReporte, as: 'categoria', attributes: ['id', 'nombre'] },
+  { model: ImagenReporte,    as: 'imagenes',  attributes: ['id', 'url_imagen'], limit: 1 },
+  ...extra,
+];
 
 const crear = async ({ titulo, descripcion, direccion_referencia, latitud, longitud, usuario_id, categoria_id }) => {
   const estado = await EstadoReporte.findOne({ where: { nombre: 'pendiente' } });
@@ -10,8 +21,15 @@ const crear = async ({ titulo, descripcion, direccion_referencia, latitud, longi
   return Reporte.create({ titulo, descripcion, direccion_referencia, latitud, longitud, usuario_id, estado_id: estado.id, categoria_id });
 };
 
-const listar = async () => {
+const listar = async ({ incluirRechazados = false } = {}) => {
+  // Obtener el estado rechazado para excluirlo si corresponde
+  const whereEstado = incluirRechazados ? {} : await (async () => {
+    const rechazado = await EstadoReporte.findOne({ where: { nombre: 'rechazado' } });
+    return rechazado ? { estado_id: { [Op.ne]: rechazado.id } } : {};
+  })();
+
   return Reporte.findAll({
+    where: whereEstado,
     include: [
       { model: Usuario,          as: 'usuario',   attributes: ['id', 'nombre', 'apellido'] },
       { model: EstadoReporte,    as: 'estado',    attributes: ['id', 'nombre'] },
@@ -23,8 +41,11 @@ const listar = async () => {
 };
 
 const listarPorCategoria = async (categoria_id) => {
+  const rechazado = await EstadoReporte.findOne({ where: { nombre: 'rechazado' } });
+  const whereEstado = rechazado ? { estado_id: { [Op.ne]: rechazado.id } } : {};
+
   return Reporte.findAll({
-    where: { categoria_id },
+    where: { categoria_id, ...whereEstado },
     include: [
       { model: Usuario,          as: 'usuario',   attributes: ['id', 'nombre', 'apellido'] },
       { model: EstadoReporte,    as: 'estado',    attributes: ['id', 'nombre'] },
@@ -198,7 +219,7 @@ const votar = async (reporte_id, usuario_id) => {
 
 // Buscar reportes cercanos (radio en km, fórmula Haversine aproximada)
 const buscarCercanos = async (lat, lng, radioKm = 0.5) => {
-  const todos = await listar();
+  const todos = await listar({ incluirRechazados: false }); // no mostrar rechazados en el mapa
   return todos.filter((r) => {
     const dLat = (parseFloat(r.latitud)  - lat) * (Math.PI / 180);
     const dLng = (parseFloat(r.longitud) - lng) * (Math.PI / 180);

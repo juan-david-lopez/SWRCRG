@@ -5,6 +5,7 @@ const { body, param } = require('express-validator');
 const ctrl         = require('../controllers/reporte.controller');
 const comentCtrl   = require('../controllers/comentario.controller');
 const auth         = require('../middlewares/auth.middleware');
+const authOptional = require('../middlewares/authOptional.middleware');
 const authorize    = require('../middlewares/authorize.middleware');
 const upload       = require('../config/upload');
 
@@ -26,12 +27,12 @@ const validarComentario = [
   body('comentario').notEmpty().withMessage('comentario es obligatorio'),
 ];
 
-// Públicas
-router.get('/',                    ctrl.listar);
-router.get('/categoria/:categoriaId', ctrl.listarPorCategoria);
-router.get('/:id',                 ctrl.obtener);
-router.get('/:id/historial',       comentCtrl.historial);
-router.get('/:id/comentarios',     comentCtrl.listar);
+// Públicas (con auth opcional para filtrar rechazados)
+router.get('/',                       authOptional, ctrl.listar);
+router.get('/categoria/:categoriaId', authOptional, ctrl.listarPorCategoria);
+router.get('/:id',                    authOptional, ctrl.obtener);
+router.get('/:id/historial',          comentCtrl.historial);
+router.get('/:id/comentarios',        comentCtrl.listar);
 
 // Ciudadano / Admin autenticado
 router.post('/',                   auth, authorize('ciudadano', 'administrador'), upload.single('image'), validarReporte, ctrl.crear);

@@ -22,7 +22,9 @@ const crear = handle(async (req, res) => {
 });
 
 const listar = handle(async (req, res) => {
-  const reportes = await reporteService.listar();
+  // Admin ve todo, el resto no ve rechazados
+  const incluirRechazados = req.user?.rol === 'administrador';
+  const reportes = await reporteService.listar({ incluirRechazados });
   res.json({ reportes });
 });
 
@@ -34,10 +36,20 @@ const listarPorCategoria = handle(async (req, res) => {
 const obtener = handle(async (req, res) => {
   const reporte = await reporteService.obtenerPorId(req.params.id);
   if (!reporte) return res.status(404).json({ error: 'Reporte no encontrado' });
+
+  // Si el reporte está rechazado, solo lo puede ver el dueño o un admin
+  if (reporte.estado?.nombre === 'rechazado') {
+    const esAdmin  = req.user?.rol === 'administrador';
+    const esDuenio = req.user?.id === reporte.usuario_id;
+    if (!esAdmin && !esDuenio)
+      return res.status(404).json({ error: 'Reporte no encontrado' });
+  }
+
   res.json({ reporte });
 });
 
 const misReportes = handle(async (req, res) => {
+  // El ciudadano ve todos sus reportes incluyendo rechazados
   const reportes = await reporteService.obtenerPorUsuario(req.user.id);
   res.json({ reportes });
 });
@@ -110,7 +122,8 @@ const asignar = handle(async (req, res) => {
   res.json({ reporte });
 });
 
-const exportarCSV = handle(async (req, res) => {  const reportes = await reporteService.listar();
+const exportarCSV = handle(async (req, res) => {
+  const reportes = await reporteService.listar({ incluirRechazados: true }); // admin ve todo
   const header = ['ID', 'Título', 'Descripción', 'Estado', 'Categoría', 'Dirección', 'Latitud', 'Longitud', 'Usuario', 'Fecha'];
   const rows = reportes.map((r) => [
     r.id,

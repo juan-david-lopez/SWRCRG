@@ -3,17 +3,16 @@ import { Link, useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Tooltip } from 'react-leaflet';
 import { getReports } from '../services/report.service';
 import { STATUS_COLORS } from '../constants/reportStatus';
-import { Search, X } from 'lucide-react';
+import { Search, X, MapPin } from 'lucide-react';
 import { TILE_URL, TILE_ATTR, createStatusIcon } from '../components/MapMarkers';
 
 const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3000';
 
-const STATUS_LABEL = { pendiente: 'Pendiente', en_proceso: 'En proceso', resuelto: 'Resuelto' };
+const STATUS_LABEL = { pendiente: 'Pendiente', verificado: 'Verificado', rechazado: 'Rechazado' };
 const STATUS_OPTIONS = [
   { value: '', label: 'Todos' },
   { value: 'pendiente',  label: 'Pendiente' },
-  { value: 'en_proceso', label: 'En proceso' },
-  { value: 'resuelto',   label: 'Resuelto' },
+  { value: 'verificado', label: 'Verificado' },
 ];
 
 const DEFAULT_CENTER = [4.7110, -74.0721];
@@ -74,8 +73,7 @@ const MapPage = () => {
         <div style={s.legend}>
           {[
             { label: 'Pendiente',  color: '#f59e0b' },
-            { label: 'En proceso', color: '#3b82f6' },
-            { label: 'Resuelto',   color: '#22c55e' },
+            { label: 'Verificado', color: '#22c55e' },
           ].map(({ label, color }) => (
             <div key={label} style={s.legendItem}>
               <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: color, flexShrink: 0 }} />
