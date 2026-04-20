@@ -161,7 +161,11 @@ const CreateReportPage = () => {
               onChange={(val) => { setForm({ ...form, categoria_id: val }); setError(''); }}
               options={categorias
                 .map((c) => ({ value: c.id, label: c.nombre.replace(/_/g, ' ').toUpperCase() }))
-                .sort((a, b) => a.label.localeCompare(b.label))}
+                .sort((a, b) => {
+                  if (a.label === 'OTRO') return 1;
+                  if (b.label === 'OTRO') return -1;
+                  return a.label.localeCompare(b.label);
+                })}
               placeholder="Selecciona una categoría"
               style={{ border: 'none', padding: '2px 0', background: 'transparent', width: '100%' }}
             />
