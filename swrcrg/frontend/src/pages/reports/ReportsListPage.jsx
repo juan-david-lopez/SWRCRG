@@ -205,11 +205,11 @@ const ReportsListPage = () => {
   const [sortBy, setSortBy]             = useState('fecha');
 
   useEffect(() => {
-    Promise.all([getReports(), getCategorias()])
+    Promise.all([getReports(sortBy === 'votos' ? 'votos' : 'fecha'), getCategorias()])
       .then(([{ reportes }, { categorias }]) => { setReports(reportes); setCategorias(categorias); })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, []);
+  }, [sortBy]);
 
   useEffect(() => { setPage(1); }, [search, filterStatus, filterCat, filterDate, dateFrom, dateTo, sortBy]);
 
@@ -252,7 +252,6 @@ const ReportsListPage = () => {
       return matchSearch && matchStatus && matchCat && matchDate;
     });
 
-    if (sortBy === 'votos')  return [...base].sort((a, b) => (b.votos ?? 0) - (a.votos ?? 0));
     if (sortBy === 'estado') return [...base].sort((a, b) => (a.estado?.nombre ?? '').localeCompare(b.estado?.nombre ?? ''));
     return base;
   }, [reports, search, filterStatus, filterCat, dateRange, sortBy]);

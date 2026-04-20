@@ -16,12 +16,14 @@ const agregar = handle(async (req, res) => {
     reporte_id: req.params.id,
     usuario_id: req.user.id,
     comentario: req.body.comentario,
+    parent_id:  req.body.parent_id ?? null,
   });
   res.status(201).json({ comentario });
 });
 
 const listar = handle(async (req, res) => {
-  const comentarios = await comentarioService.listarPorReporte(req.params.id);
+  const usuario_id = req.user?.id ?? null;
+  const comentarios = await comentarioService.listarPorReporte(req.params.id, usuario_id);
   res.json({ comentarios });
 });
 
@@ -29,6 +31,11 @@ const eliminar = handle(async (req, res) => {
   const comentario = await comentarioService.eliminar(req.params.comentarioId, req.user.id, req.user.rol);
   if (!comentario) return res.status(404).json({ error: 'Comentario no encontrado' });
   res.json({ comentario });
+});
+
+const like = handle(async (req, res) => {
+  const result = await comentarioService.toggleLike(req.params.comentarioId, req.user.id);
+  res.json(result);
 });
 
 const historial = handle(async (req, res) => {
@@ -43,4 +50,4 @@ const historial = handle(async (req, res) => {
   res.json({ historial });
 });
 
-module.exports = { agregar, listar, eliminar, historial };
+module.exports = { agregar, listar, eliminar, like, historial };

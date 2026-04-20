@@ -19,22 +19,20 @@ const crear = async ({ titulo, descripcion, direccion_referencia, latitud, longi
   return Reporte.create({ titulo, descripcion, direccion_referencia, latitud, longitud, usuario_id, estado_id: estado.id, categoria_id });
 };
 
-const listar = async ({ incluirRechazados = false } = {}) => {
-  // Obtener el estado rechazado para excluirlo si corresponde
+const listar = async ({ incluirRechazados = false, sortBy = 'fecha' } = {}) => {
   const whereEstado = incluirRechazados ? {} : await (async () => {
     const rechazado = await EstadoReporte.findOne({ where: { nombre: 'rechazado' } });
     return rechazado ? { estado_id: { [Op.ne]: rechazado.id } } : {};
   })();
 
+  const order = sortBy === 'votos'
+    ? [['votos', 'DESC'], ['fecha_reporte', 'DESC']]
+    : [['fecha_reporte', 'DESC']];
+
   return Reporte.findAll({
     where: whereEstado,
-    include: [
-      { model: Usuario,          as: 'usuario',   attributes: ['id', 'nombre', 'apellido'] },
-      { model: EstadoReporte,    as: 'estado',    attributes: ['id', 'nombre'] },
-      { model: CategoriaReporte, as: 'categoria', attributes: ['id', 'nombre'] },
-      { model: ImagenReporte,    as: 'imagenes',  attributes: ['id', 'url_imagen'], limit: 1 },
-    ],
-    order: [['fecha_reporte', 'DESC']],
+    include: INCLUDE_BASE(),
+    order,
   });
 };
 

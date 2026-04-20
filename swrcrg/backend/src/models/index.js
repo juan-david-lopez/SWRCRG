@@ -23,6 +23,7 @@ const ImagenReporte        = require('./imagenReporte.model')(sequelize, DataTyp
 const HistorialEstado      = require('./historialEstado.model')(sequelize, DataTypes);
 const ComentarioReporte    = require('./comentarioReporte.model')(sequelize, DataTypes);
 const Notificacion         = require('./notificacion.model')(sequelize, DataTypes);
+const ComentarioLike       = require('./comentarioLike.model')(sequelize, DataTypes);
 
 // ── Asociaciones ──────────────────────────────────────────────────────────────
 
@@ -60,6 +61,16 @@ ComentarioReporte.belongsTo(Reporte,     { foreignKey: 'reporte_id', as: 'report
 Usuario.hasMany(ComentarioReporte,       { foreignKey: 'usuario_id', as: 'comentarios' });
 ComentarioReporte.belongsTo(Usuario,     { foreignKey: 'usuario_id', as: 'usuario' });
 
+// ComentarioReporte self-referential (replies)
+ComentarioReporte.hasMany(ComentarioReporte, { foreignKey: 'parent_id', as: 'respuestas', onDelete: 'CASCADE' });
+ComentarioReporte.belongsTo(ComentarioReporte, { foreignKey: 'parent_id', as: 'parent' });
+
+// ComentarioReporte ↔ ComentarioLike
+ComentarioReporte.hasMany(ComentarioLike, { foreignKey: 'comentario_id', as: 'likes', onDelete: 'CASCADE' });
+ComentarioLike.belongsTo(ComentarioReporte, { foreignKey: 'comentario_id', as: 'comentario' });
+Usuario.hasMany(ComentarioLike,           { foreignKey: 'usuario_id', as: 'comentarioLikes' });
+ComentarioLike.belongsTo(Usuario,         { foreignKey: 'usuario_id', as: 'usuario' });
+
 // Usuario ↔ Notificacion
 Usuario.hasMany(Notificacion,            { foreignKey: 'usuario_id', as: 'notificaciones', onDelete: 'CASCADE' });
 Notificacion.belongsTo(Usuario,          { foreignKey: 'usuario_id', as: 'usuario' });
@@ -75,5 +86,6 @@ module.exports = {
   ImagenReporte,
   HistorialEstado,
   ComentarioReporte,
+  ComentarioLike,
   Notificacion,
 };

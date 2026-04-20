@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getReport, getReportHistory, getReportComments, addComment, deleteComment, voteReport, reportContent, reenviarReporte, editReport } from '../../services/report.service';
+import { getReport, getReportHistory, getReportComments, addComment, deleteComment, likeComment, voteReport, reportContent, reenviarReporte, editReport } from '../../services/report.service';
 import { STATUS_COLORS, STATUS_LABEL } from '../../constants/reportStatus';
 import { useAuth } from '../../context/AuthContext';
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
-import { Send, Trash2, ThumbsUp, Share2, MapPin, User, Calendar, Flag, RotateCcw, XCircle, CheckCircle2, X } from 'lucide-react';
+import { Send, Trash2, ThumbsUp, Share2, MapPin, User, Calendar, Flag, RotateCcw, XCircle, Heart, MessageSquare, X } from 'lucide-react';
 import { toast } from '../../components/Toast';
 import Lightbox from '../../components/Lightbox';
 import { TILE_URL, TILE_ATTR, createStatusIcon } from '../../components/MapMarkers';
@@ -29,6 +29,8 @@ const ReportDetailPage = () => {
   const [commentErr,  setCommentErr]  = useState('');
   const [lightboxIdx, setLightboxIdx] = useState(null);
   const [showEditReenvio, setShowEditReenvio] = useState(false);
+  const [replyingTo,  setReplyingTo]  = useState(null); // comentario_id al que se responde
+  const [replyText,   setReplyText]   = useState('');
 
   useEffect(() => {
     Promise.all([
@@ -52,7 +54,7 @@ const ReportDetailPage = () => {
     setCommentErr('');
     try {
       const { comentario } = await addComment(id, newComment.trim());
-      setComentarios((prev) => [...prev, comentario]);
+      setComentarios((prev) => [...prev, { ...comentario, total_likes: 0, liked: false, respuestas: [] }]);
       setNewComment('');
       toast.success('Comentario agregado');
     } catch (err) {
@@ -62,10 +64,55 @@ const ReportDetailPage = () => {
     }
   };
 
-  const handleDeleteComment = async (comentId) => {
+  const handleAddReply = async (parentId) => {
+    if (!replyText.trim()) return;
+    try {
+      const { comentario } = await addComment(id, replyText.trim(), parentId);
+      setComentarios((prev) => prev.map((c) =>
+        c.id === parentId
+          ? { ...c, respuestas: [...(c.respuestas ?? []), { ...comentario, total_likes: 0, liked: false }] }
+          : c
+      ));
+      setReplyingTo(null);
+      setReplyText('');
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+
+  const handleLike = async (comentarioId, isReply = false, parentId = null) => {
+    if (!user) return toast.error('Debes iniciar sesión para dar me gusta');
+    try {
+      const { liked, total_likes } = await likeComment(id, comentarioId);
+      setComentarios((prev) => prev.map((c) => {
+        if (!isReply && c.id === comentarioId) return { ...c, liked, total_likes };
+        if (isReply && c.id === parentId) {
+          return {
+            ...c,
+            respuestas: (c.respuestas ?? []).map((r) =>
+              r.id === comentarioId ? { ...r, liked, total_likes } : r
+            ),
+          };
+        }
+        return c;
+      }));
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+
+  const handleDeleteComment = async (comentId, parentId = null) => {
     try {
       await deleteComment(id, comentId);
-      setComentarios((prev) => prev.filter((c) => c.id !== comentId));
+      if (parentId) {
+        setComentarios((prev) => prev.map((c) =>
+          c.id === parentId
+            ? { ...c, respuestas: (c.respuestas ?? []).filter((r) => r.id !== comentId) }
+            : c
+        ));
+      } else {
+        setComentarios((prev) => prev.filter((c) => c.id !== comentId));
+      }
       toast.success('Comentario eliminado');
     } catch (err) {
       toast.error(err.message);
@@ -269,6 +316,7 @@ const ReportDetailPage = () => {
           <div style={st.comments}>
             {comentarios.map((c) => (
               <div key={c.id} style={st.comment}>
+                {/* Cabecera */}
                 <div style={st.commentHeader}>
                   <span style={st.commentAuthor}>
                     {c.usuario?.nombre} {c.usuario?.apellido}
@@ -280,13 +328,84 @@ const ReportDetailPage = () => {
                     </button>
                   )}
                 </div>
+
+                {/* Texto */}
                 <p style={st.commentText}>{c.comentario}</p>
+
+                {/* Acciones */}
+                <div style={st.commentActions}>
+                  <button
+                    onClick={() => handleLike(c.id)}
+                    style={{ ...st.likeBtn, color: c.liked ? '#e11d48' : 'var(--c-text-3)', borderColor: c.liked ? '#fda4af' : 'var(--c-border)' }}
+                    title="Me gusta"
+                  >
+                    <Heart size={13} strokeWidth={2} fill={c.liked ? '#e11d48' : 'none'} />
+                    {c.total_likes > 0 && <span>{c.total_likes}</span>}
+                  </button>
+                  {user && (
+                    <button
+                      onClick={() => setReplyingTo(replyingTo === c.id ? null : c.id)}
+                      style={{ ...st.replyBtn, color: replyingTo === c.id ? '#2563eb' : 'var(--c-text-3)' }}
+                    >
+                      <MessageSquare size={13} strokeWidth={2} />
+                      {c.respuestas?.length > 0 ? `${c.respuestas.length} respuesta${c.respuestas.length > 1 ? 's' : ''}` : 'Responder'}
+                    </button>
+                  )}
+                </div>
+
+                {/* Caja de respuesta */}
+                {replyingTo === c.id && (
+                  <div style={st.replyBox}>
+                    <input
+                      autoFocus
+                      value={replyText}
+                      onChange={(e) => setReplyText(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleAddReply(c.id)}
+                      placeholder="Escribe una respuesta..."
+                      style={st.replyInput}
+                    />
+                    <button onClick={() => handleAddReply(c.id)} disabled={!replyText.trim()} style={{ ...st.replySendBtn, opacity: replyText.trim() ? 1 : 0.5 }}>
+                      <Send size={13} strokeWidth={2} />
+                    </button>
+                  </div>
+                )}
+
+                {/* Respuestas */}
+                {c.respuestas?.length > 0 && (
+                  <div style={st.replies}>
+                    {c.respuestas.map((r) => (
+                      <div key={r.id} style={st.reply}>
+                        <div style={st.commentHeader}>
+                          <span style={st.commentAuthor}>
+                            {r.usuario?.nombre} {r.usuario?.apellido}
+                            <span style={st.commentDate}> — {formatDate(r.fecha_creacion)}</span>
+                          </span>
+                          {(isAdmin || r.usuario?.id === user?.id) && (
+                            <button onClick={() => handleDeleteComment(r.id, c.id)} style={st.deleteBtn} title="Eliminar respuesta">
+                              <Trash2 size={13} strokeWidth={2} />
+                            </button>
+                          )}
+                        </div>
+                        <p style={st.commentText}>{r.comentario}</p>
+                        <div style={st.commentActions}>
+                          <button
+                            onClick={() => handleLike(r.id, true, c.id)}
+                            style={{ ...st.likeBtn, color: r.liked ? '#e11d48' : 'var(--c-text-3)', borderColor: r.liked ? '#fda4af' : 'var(--c-border)' }}
+                          >
+                            <Heart size={12} strokeWidth={2} fill={r.liked ? '#e11d48' : 'none'} />
+                            {r.total_likes > 0 && <span>{r.total_likes}</span>}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>
         )}
 
-        {/* Form — admin y dueño del reporte pueden comentar */}
+        {/* Form nuevo comentario */}
         {canComment && (
           <form onSubmit={handleAddComment} style={st.commentForm}>
             <div style={st.commentInputWrap}>
@@ -365,6 +484,15 @@ const st = {  wrapper:        { maxWidth: '720px', margin: '0 auto', padding: '3
   commentInput:   { flex: 1, border: '1px solid var(--c-border)', borderRadius: '8px', padding: '10px 14px', fontSize: '14px', fontFamily: 'inherit', color: 'var(--c-text)', outline: 'none' },
   sendBtn:        { display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 18px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' },
   commentErr:     { fontSize: '12px', color: '#ef4444', margin: 0 },
+
+  commentActions: { display: 'flex', alignItems: 'center', gap: '10px', marginTop: '6px' },
+  likeBtn:        { display: 'flex', alignItems: 'center', gap: '4px', background: 'none', border: '1px solid var(--c-border)', borderRadius: '20px', padding: '3px 10px', cursor: 'pointer', fontSize: '12px', fontWeight: '600', fontFamily: 'inherit', transition: 'color 0.15s' },
+  replyBtn:       { display: 'flex', alignItems: 'center', gap: '4px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: '600', fontFamily: 'inherit', padding: '3px 0' },
+  replyBox:       { display: 'flex', gap: '8px', marginTop: '10px', alignItems: 'center' },
+  replyInput:     { flex: 1, border: '1px solid var(--c-border)', borderRadius: '8px', padding: '8px 12px', fontSize: '13px', fontFamily: 'inherit', color: 'var(--c-text)', outline: 'none', background: 'var(--c-bg)' },
+  replySendBtn:   { display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px 10px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', flexShrink: 0 },
+  replies:        { marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px', paddingLeft: '16px', borderLeft: '2px solid var(--c-border)' },
+  reply:          { display: 'flex', flexDirection: 'column', gap: '4px' },
 
   actionBtn:      { display: 'flex', alignItems: 'center', gap: '5px', background: 'none', border: '1px solid var(--c-border)', borderRadius: '20px', padding: '4px 10px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: 'var(--c-text-3)', fontFamily: 'inherit' },
   rechazoBanner:  { background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '10px', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '4px' },

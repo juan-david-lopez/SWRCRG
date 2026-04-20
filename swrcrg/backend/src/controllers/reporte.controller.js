@@ -22,9 +22,9 @@ const crear = handle(async (req, res) => {
 });
 
 const listar = handle(async (req, res) => {
-  // Admin ve todo, el resto no ve rechazados
   const incluirRechazados = req.user?.rol === 'administrador';
-  const reportes = await reporteService.listar({ incluirRechazados });
+  const sortBy = req.query.sortBy === 'votos' ? 'votos' : 'fecha';
+  const reportes = await reporteService.listar({ incluirRechazados, sortBy });
   res.json({ reportes });
 });
 

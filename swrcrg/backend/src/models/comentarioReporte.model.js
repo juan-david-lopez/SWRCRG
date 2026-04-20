@@ -6,6 +6,7 @@ module.exports = (sequelize, DataTypes) => {
     reporte_id:  { type: DataTypes.UUID, allowNull: false },
     usuario_id:  { type: DataTypes.UUID, allowNull: false },
     comentario:  { type: DataTypes.TEXT, allowNull: false },
+    parent_id:   { type: DataTypes.UUID, allowNull: true, defaultValue: null },
   }, {
     tableName:  'comentarios_reporte',
     timestamps: true,

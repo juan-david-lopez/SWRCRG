@@ -228,9 +228,6 @@ const Home = () => {
             <div>
               <p style={s.footerColTitle}>Plataforma</p>
               <Link to="/reports" style={s.footerLink}>Ver reportes</Link>
-              <Link to="/reports/create" style={s.footerLink}>Crear reporte</Link>
-              <Link to="/mis-reportes" style={s.footerLink}>Estadísticas</Link>
-              <Link to="/login" style={s.footerLink}>Administrar</Link>
             </div>
             <div>
               <p style={s.footerColTitle}>Cuenta</p>

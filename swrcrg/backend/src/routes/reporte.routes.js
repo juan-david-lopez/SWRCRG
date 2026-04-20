@@ -32,7 +32,7 @@ router.get('/',                       authOptional, ctrl.listar);
 router.get('/categoria/:categoriaId', authOptional, ctrl.listarPorCategoria);
 router.get('/:id',                    authOptional, ctrl.obtener);
 router.get('/:id/historial',          comentCtrl.historial);
-router.get('/:id/comentarios',        comentCtrl.listar);
+router.get('/:id/comentarios',        authOptional, comentCtrl.listar);
 
 // Ciudadano / Admin autenticado
 router.post('/',                   auth, authorize('ciudadano', 'administrador'), upload.single('image'), validarReporte, ctrl.crear);
@@ -52,7 +52,8 @@ router.post('/:id/reportar',       auth, authorize('ciudadano', 'administrador')
 router.put('/:id/estado',          auth, authorize('administrador'), validarEstado, ctrl.cambiarEstado);
 router.put('/:id/asignar',         auth, authorize('administrador'), ctrl.asignar);
 router.delete('/:id/imagenes/:imageId', auth, authorize('administrador'), ctrl.eliminarImagen);
-router.delete('/:id/comentarios/:comentarioId', auth, authorize('administrador'), comentCtrl.eliminar);
+router.delete('/:id/comentarios/:comentarioId', auth, authorize('ciudadano', 'administrador'), comentCtrl.eliminar);
+router.post('/:id/comentarios/:comentarioId/like', auth, authorize('ciudadano', 'administrador'), comentCtrl.like);
 router.get('/exportar/csv',        auth, authorize('administrador'), ctrl.exportarCSV);
 
 module.exports = router;

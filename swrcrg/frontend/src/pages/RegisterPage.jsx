@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { User, Mail, Lock, Phone, Eye, EyeOff, ArrowLeft, CheckCircle } from 'lucide-react';
 import { register } from '../services/auth.service';
+import { toast } from '../components/Toast';
 
 const INITIAL = { nombre: '', apellido: '', correo: '', contrasena: '', confirmar: '', telefono: '' };
 
@@ -63,7 +64,6 @@ const RegisterPage = () => {
   const [touched, setTouched]   = useState({});
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState('');
-  const [success, setSuccess]   = useState('');
   const [showPwd, setShowPwd]   = useState(false);
   const [showConf, setShowConf] = useState(false);
 
@@ -87,13 +87,12 @@ const RegisterPage = () => {
     setTouched({ nombre: true, apellido: true, correo: true, contrasena: true, confirmar: true, telefono: true });
     const err = validate(form);
     if (err) return setError(err);
-    setError(''); setSuccess(''); setLoading(true);
+    setError(''); setLoading(true);
     try {
       const { nombre, apellido, correo, contrasena, telefono } = form;
       await register({ nombre, apellido, correo, contrasena, telefono });
-      setSuccess('¡Cuenta creada! Redirigiendo...');
-      setForm(INITIAL);
-      setTimeout(() => navigate('/login'), 1500);
+      toast.success('¡Cuenta creada exitosamente!');
+      navigate('/login');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -191,8 +190,7 @@ const RegisterPage = () => {
 
             <IconInput icon={Phone} name="telefono" value={form.telefono} placeholder="Teléfono (opcional)" onChange={handleChange} onBlur={handleBlur} error={fieldError('telefono')} hint="Opcional" />
 
-            {error   && <p style={s.errorBox}>{error}</p>}
-            {success && <p style={s.successBox}>{success}</p>}
+            {error && <p style={s.errorBox}>{error}</p>}
 
             <button type="submit" disabled={loading} style={{ ...s.btn, opacity: loading ? 0.7 : 1 }}>
               {loading ? 'Creando cuenta...' : 'Crear cuenta gratis'}

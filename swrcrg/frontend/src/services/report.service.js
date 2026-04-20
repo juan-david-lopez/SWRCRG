@@ -16,7 +16,7 @@ export const createReportForm = (formData) => {
   });
 };
 
-export const getReports         = ()                    => get('/reportes');
+export const getReports         = (sortBy = 'fecha')        => get(`/reportes?sortBy=${sortBy}`);
 export const getReport          = (id)                  => get(`/reportes/${id}`);
 export const getMyReports       = ()                    => get('/reportes/me/reportes');
 export const getReportsByCategory = (catId)             => get(`/reportes/categoria/${catId}`);
@@ -24,8 +24,9 @@ export const updateReportStatus = (id, estado, observacion, motivo_rechazo) =>
   put(`/reportes/${id}/estado`, { estado, observacion, motivo_rechazo });
 export const getReportHistory   = (id)                  => get(`/reportes/${id}/historial`);
 export const getReportComments  = (id)                  => get(`/reportes/${id}/comentarios`);
-export const addComment         = (id, comentario)       => post(`/reportes/${id}/comentarios`, { comentario });
+export const addComment         = (id, comentario, parent_id = null) => post(`/reportes/${id}/comentarios`, { comentario, parent_id });
 export const deleteComment      = (reporteId, comentId)  => del(`/reportes/${reporteId}/comentarios/${comentId}`);
+export const likeComment        = (reporteId, comentId)  => post(`/reportes/${reporteId}/comentarios/${comentId}/like`, {});
 export const editReport         = (id, data)             => put(`/reportes/${id}`, data);
 export const deleteReport       = (id)                   => del(`/reportes/${id}`);
 
