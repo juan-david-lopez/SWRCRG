@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Microservicios | Gestión de Empleados</title>
-    <meta name="description" content="Plataforma de backend basada en microservicios para la gestión corporativa de empleados.">
+    <title>SWRCRG | Reportes Ciudadanos</title>
+    <meta name="description" content="Sistema Integral de Reportes Ciudadanos. Plataforma web para la gestión, seguimiento y resolución de incidencias urbanas.">
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -235,8 +235,8 @@
     <div class="bg-blob blob-2"></div>
 
     <header>
-        <h1>Sistema de Microservicios</h1>
-        <p class="subtitle">Arquitectura backend distribuida para la gestión integral de empleados. Despliegue continuo en la nube para alta disponibilidad.</p>
+        <h1>SWRCRG</h1>
+        <p class="subtitle">Sistema Integral de Reportes Ciudadanos. Plataforma para la gestión, seguimiento y resolución de incidencias urbanas para una ciudad más limpia.</p>
         
         <a href="https://vercel.com/new" target="_blank" class="deploy-banner" rel="noopener noreferrer">
             <svg viewBox="0 0 76 65" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M37.5274 0L75.0548 65H0L37.5274 0Z" fill="#000000"/></svg>
@@ -246,94 +246,89 @@
 
     <main>
         <div class="services-grid">
-            <!-- Gateway Service -->
+            <!-- Frontend App -->
             <div class="card">
                 <div class="card-header">
-                    <h2 class="card-title">API Gateway</h2>
+                    <h2 class="card-title">Frontend (Web App)</h2>
                     <span class="status-badge">Operativo</span>
                 </div>
-                <p class="card-desc">Punto de entrada único para todos los clientes. Maneja el enrutamiento, balanceo de carga y validación inicial.</p>
+                <p class="card-desc">Interfaz de usuario interactiva con mapas integrados para creación y visualización de reportes.</p>
+                <div class="tech-stack">
+                    <span class="tech-tag">React</span>
+                    <span class="tech-tag">Vite</span>
+                    <span class="tech-tag">Leaflet</span>
+                </div>
+            </div>
+
+            <!-- Backend API -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Backend API</h2>
+                    <span class="status-badge">Operativo</span>
+                </div>
+                <p class="card-desc">API RESTful robusta para el procesamiento centralizado y gestión de todos los reportes ciudadanos.</p>
                 <div class="tech-stack">
                     <span class="tech-tag">Node.js</span>
                     <span class="tech-tag">Express</span>
-                    <span class="tech-tag">Port: 8085</span>
                 </div>
             </div>
 
-            <!-- Auth Service -->
+            <!-- Database -->
             <div class="card">
                 <div class="card-header">
-                    <h2 class="card-title">Auth Service</h2>
+                    <h2 class="card-title">Base de Datos</h2>
                     <span class="status-badge">Operativo</span>
                 </div>
-                <p class="card-desc">Emisión y validación de tokens JWT stateless. Gestión de roles, autenticación de usuarios y recuperación de credenciales.</p>
+                <p class="card-desc">Almacenamiento relacional seguro para usuarios, registros de incidencias y configuraciones del sistema.</p>
                 <div class="tech-stack">
-                    <span class="tech-tag">Node.js</span>
                     <span class="tech-tag">PostgreSQL</span>
+                    <span class="tech-tag">Sequelize</span>
+                </div>
+            </div>
+
+            <!-- Auth & Seguridad -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Auth & Seguridad</h2>
+                    <span class="status-badge">Operativo</span>
+                </div>
+                <p class="card-desc">Sistema de autenticación y control de acceso basado en roles (Ciudadano, Administrador).</p>
+                <div class="tech-stack">
                     <span class="tech-tag">JWT</span>
+                    <span class="tech-tag">Bcrypt</span>
                 </div>
             </div>
 
-            <!-- Empleados Service -->
+            <!-- Gestión de Reportes -->
             <div class="card">
                 <div class="card-header">
-                    <h2 class="card-title">Empleados Service</h2>
+                    <h2 class="card-title">Gestión de Reportes</h2>
                     <span class="status-badge">Operativo</span>
                 </div>
-                <p class="card-desc">Microservicio core para la gestión del ciclo de vida del empleado (Onboarding, Offboarding, Reactivación).</p>
+                <p class="card-desc">Motor para la creación, categorización, asignación de estados y seguimiento de incidencias.</p>
                 <div class="tech-stack">
                     <span class="tech-tag">Node.js</span>
-                    <span class="tech-tag">PostgreSQL</span>
-                    <span class="tech-tag">RabbitMQ</span>
+                    <span class="tech-tag">Express</span>
                 </div>
             </div>
 
-            <!-- Departamentos Service -->
+            <!-- Notificaciones -->
             <div class="card">
                 <div class="card-header">
-                    <h2 class="card-title">Departamentos Service</h2>
+                    <h2 class="card-title">Notificaciones</h2>
                     <span class="status-badge">Operativo</span>
                 </div>
-                <p class="card-desc">Administración de áreas corporativas y estructuras organizacionales. Suministra validación a empleados.</p>
-                <div class="tech-stack">
-                    <span class="tech-tag">Python</span>
-                    <span class="tech-tag">FastAPI</span>
-                    <span class="tech-tag">PostgreSQL</span>
-                </div>
-            </div>
-
-            <!-- Perfiles Service -->
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">Perfiles Service</h2>
-                    <span class="status-badge">Operativo</span>
-                </div>
-                <p class="card-desc">Gestión de la información pública y configuraciones específicas del perfil del empleado.</p>
+                <p class="card-desc">Sistema de envío de correos y alertas sobre el cambio de estado en los reportes de los ciudadanos.</p>
                 <div class="tech-stack">
                     <span class="tech-tag">Node.js</span>
-                    <span class="tech-tag">PostgreSQL</span>
-                    <span class="tech-tag">RabbitMQ</span>
-                </div>
-            </div>
-
-            <!-- Notificaciones Service -->
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">Notificaciones Service</h2>
-                    <span class="status-badge">Operativo</span>
-                </div>
-                <p class="card-desc">Envío asíncrono de correos electrónicos y notificaciones al detectar eventos del dominio.</p>
-                <div class="tech-stack">
-                    <span class="tech-tag">Node.js</span>
-                    <span class="tech-tag">RabbitMQ</span>
-                    <span class="tech-tag">SMTP</span>
+                    <span class="tech-tag">SendGrid</span>
                 </div>
             </div>
         </div>
     </main>
 
     <footer>
-        <p>&copy; 2026 Sistema de Microservicios Corporativo. Todos los derechos reservados.</p>
+        <p>&copy; 2026 SWRCRG - Sistema de Reportes Ciudadanos. Todos los derechos reservados.</p>
     </footer>
 
     <script>
