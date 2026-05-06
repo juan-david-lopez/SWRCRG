@@ -30,22 +30,27 @@ const validarComentario = [
 // Públicas (con auth opcional para filtrar rechazados)
 router.get('/',                       authOptional, ctrl.listar);
 router.get('/categoria/:categoriaId', authOptional, ctrl.listarPorCategoria);
+
+// Rutas estáticas — deben ir ANTES de /:id para evitar conflictos
+router.get('/me/reportes',         auth, authorize('ciudadano', 'administrador'), ctrl.misReportes);
+router.get('/cercanos',            ctrl.cercanos);
+router.get('/exportar/csv',        auth, authorize('administrador'), ctrl.exportarCSV);
+router.get('/exportar/pdf',        auth, authorize('administrador'), ctrl.exportarPDF);
+router.get('/estadisticas',        auth, authorize('administrador'), ctrl.estadisticas);
+
+// Rutas dinámicas con :id
 router.get('/:id',                    authOptional, ctrl.obtener);
 router.get('/:id/historial',          comentCtrl.historial);
 router.get('/:id/comentarios',        authOptional, comentCtrl.listar);
 
 // Ciudadano / Admin autenticado
 router.post('/',                   auth, authorize('ciudadano', 'administrador'), upload.single('image'), validarReporte, ctrl.crear);
-router.get('/me/reportes',         auth, authorize('ciudadano', 'administrador'), ctrl.misReportes);
 router.post('/:id/imagenes',       auth, authorize('ciudadano', 'administrador'), upload.single('image'), ctrl.subirImagen);
 router.put('/:id',                 auth, authorize('ciudadano', 'administrador'), ctrl.editar);
 router.delete('/:id',              auth, authorize('ciudadano', 'administrador'), ctrl.eliminar);
 router.post('/:id/votar',          auth, authorize('ciudadano', 'administrador'), ctrl.votar);
 router.post('/:id/reenviar',       auth, authorize('ciudadano'), ctrl.reenviarParaRevision);
-router.get('/cercanos',            ctrl.cercanos);
-// Comentarios: ciudadanos en sus propios reportes + admins en cualquiera
 router.post('/:id/comentarios',    auth, authorize('ciudadano', 'administrador'), validarComentario, comentCtrl.agregar);
-// Reportar contenido inapropiado
 router.post('/:id/reportar',       auth, authorize('ciudadano', 'administrador'), ctrl.reportarContenido);
 
 // Solo admin
@@ -54,6 +59,5 @@ router.put('/:id/asignar',         auth, authorize('administrador'), ctrl.asigna
 router.delete('/:id/imagenes/:imageId', auth, authorize('administrador'), ctrl.eliminarImagen);
 router.delete('/:id/comentarios/:comentarioId', auth, authorize('ciudadano', 'administrador'), comentCtrl.eliminar);
 router.post('/:id/comentarios/:comentarioId/like', auth, authorize('ciudadano', 'administrador'), comentCtrl.like);
-router.get('/exportar/csv',        auth, authorize('administrador'), ctrl.exportarCSV);
 
 module.exports = router;

@@ -1,16 +1,13 @@
 'use strict';
 
-const { sequelize, Rol, EstadoReporte, CategoriaReporte, Usuario, CodigoVerificacion } = require('../../src/models');
+const { sequelize, Rol, EstadoReporte, CategoriaReporte, Usuario } = require('../../src/models');
 const bcrypt = require('bcryptjs');
 
 /** Limpia datos de prueba (dominio @test.com) */
 const cleanTestData = async () => {
-  await CodigoVerificacion.destroy({ where: {}, truncate: true, cascade: true }).catch(() => {});
-  // Buscar usuarios de prueba y destruirlos (Sequelize maneja CASCADE en BD)
   const testUsers = await Usuario.findAll({
     where: sequelize.literal("correo LIKE '%@test.com'"),
   });
-  // Destruir uno por uno para respetar las FK constraints (CASCADE en BD)
   for (const u of testUsers) {
     await sequelize.query(`DELETE FROM reportes WHERE usuario_id = '${u.id}'`).catch(() => {});
     await sequelize.query(`DELETE FROM notificaciones WHERE usuario_id = '${u.id}'`).catch(() => {});
@@ -78,16 +75,6 @@ const getEstadoPendiente = async () => {
   return estado.id;
 };
 
-/** Crea un código de verificación válido para un correo */
-const crearCodigoVerificacion = async (correo, codigo = '123456') => {
-  return CodigoVerificacion.create({
-    correo:    correo.toLowerCase(),
-    codigo,
-    expira_en: new Date(Date.now() + 10 * 60 * 1000),
-    usado:     false,
-  });
-};
-
 const closeDb = async () => {
   await sequelize.close();
 };
@@ -100,6 +87,5 @@ module.exports = {
   crearUsuarioAdmin,
   getCategoria,
   getEstadoPendiente,
-  crearCodigoVerificacion,
   closeDb,
 };

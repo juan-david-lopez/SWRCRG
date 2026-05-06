@@ -1,9 +1,9 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getReports, updateReportStatus, exportReportsCSV, assignReport } from '../../services/report.service';
+import { getReports, updateReportStatus, exportReportsCSV, exportReportsPDF, assignReport, getEstadisticas } from '../../services/report.service';
 import { getUsuarios, toggleUsuarioActivo, changeUsuarioRol } from '../../services/auth.service';
 import { REPORT_STATUSES, STATUS_COLORS, STATUS_LABEL } from '../../constants/reportStatus';
-import { MapPin, Calendar, User, Search, X, BarChart2, Users, FileText, CheckCircle, Download, UserCheck, Clock } from 'lucide-react';
+import { MapPin, Calendar, User, Search, X, BarChart2, Users, FileText, CheckCircle, Download, UserCheck, Clock, TrendingUp, AlertCircle } from 'lucide-react';
 import { RowSkeleton } from '../../components/Skeleton';
 import ConfirmModal from '../../components/ConfirmModal';
 import Select from '../../components/Select';
@@ -64,11 +64,13 @@ const FlaggedTab = ({ reports, formatDate }) => {
 
 const AdminReportsPage = () => {
   const navigate = useNavigate();
-  const [tab, setTab]                   = useState('reports'); // 'reports' | 'users' | 'stats'
+  const [tab, setTab]                   = useState('reports');
   const [reports, setReports]           = useState([]);
   const [usuarios, setUsuarios]         = useState([]);
+  const [stats, setStats]               = useState(null);
   const [loadingR, setLoadingR]         = useState(true);
   const [loadingU, setLoadingU]         = useState(false);
+  const [loadingStats, setLoadingStats] = useState(false);
   const [updating, setUpdating]         = useState(null);
   const [observaciones, setObservaciones] = useState({});
   const [motivosRechazo, setMotivosRechazo] = useState({});
@@ -77,19 +79,26 @@ const AdminReportsPage = () => {
   const [searchUsers, setSearchUsers]   = useState('');
   const [confirmToggle, setConfirmToggle] = useState(null);
   const [exporting, setExporting]       = useState(false);
+  const [exportingPDF, setExportingPDF] = useState(false);
 
   useEffect(() => {
-    getReports()
+    getReports({ limit: 100 })
       .then(({ reportes }) => setReports(reportes))
       .catch((err) => toast.error(err.message))
       .finally(() => setLoadingR(false));
-    // Cargar usuarios al montar para que el select de asignación funcione desde el inicio
     getUsuarios()
       .then(({ usuarios }) => setUsuarios(usuarios))
       .catch(() => {});
   }, []);
 
   useEffect(() => {
+    if (tab === 'stats' && !stats && !loadingStats) {
+      setLoadingStats(true);
+      getEstadisticas()
+        .then((data) => setStats(data))
+        .catch((err) => toast.error(err.message))
+        .finally(() => setLoadingStats(false));
+    }
     if (tab === 'users' && !loadingU && usuarios.length === 0) {
       setLoadingU(true);
       getUsuarios()
@@ -153,6 +162,18 @@ const AdminReportsPage = () => {
     }
   };
 
+  const handleExportPDF = async () => {
+    setExportingPDF(true);
+    try {
+      await exportReportsPDF();
+      toast.success('PDF descargado');
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setExportingPDF(false);
+    }
+  };
+
   const handleAsignar = async (reporteId, funcionarioId) => {
     try {
       await assignReport(reporteId, funcionarioId || null);
@@ -168,36 +189,6 @@ const AdminReportsPage = () => {
   const pendientes = reports.filter((r) => r.estado?.nombre === 'pendiente').length;
   const enProceso  = reports.filter((r) => r.estado?.nombre === 'en_proceso').length;
   const resueltos  = reports.filter((r) => r.estado?.nombre === 'resuelto').length;
-
-  // Stats por categoría
-  const catStats = useMemo(() => {
-    const map = {};
-    reports.forEach((r) => {
-      const nombre = r.categoria?.nombre?.replace(/_/g, ' ') || 'Sin categoría';
-      map[nombre] = (map[nombre] || 0) + 1;
-    });
-    return Object.entries(map).sort((a, b) => b[1] - a[1]);
-  }, [reports]);
-  const maxCat = catStats[0]?.[1] || 1;
-
-  // Tendencia por semana (últimas 8 semanas)
-  const weeklyTrend = useMemo(() => {
-    const weeks = {};
-    const now = new Date();
-    for (let i = 7; i >= 0; i--) {
-      const d = new Date(now);
-      d.setDate(d.getDate() - i * 7);
-      const key = `${d.getFullYear()}-W${Math.ceil(d.getDate() / 7)}`;
-      weeks[key] = { label: `S${8 - i}`, count: 0 };
-    }
-    reports.forEach((r) => {
-      const d = new Date(r.fecha_reporte);
-      const key = `${d.getFullYear()}-W${Math.ceil(d.getDate() / 7)}`;
-      if (weeks[key]) weeks[key].count++;
-    });
-    return Object.values(weeks);
-  }, [reports]);
-  const maxWeek = Math.max(...weeklyTrend.map((w) => w.count), 1);
 
   // Filtered reports
   const filtered = useMemo(() => reports.filter((r) => {
@@ -255,61 +246,121 @@ const AdminReportsPage = () => {
               )}
             </button>
           </div>
-          <button onClick={handleExportCSV} disabled={exporting} style={s.exportBtn}>
-            <Download size={14} strokeWidth={2} />
-            {exporting ? 'Exportando...' : 'Exportar CSV'}
-          </button>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <button onClick={handleExportCSV} disabled={exporting} style={s.exportBtn}>
+              <Download size={14} strokeWidth={2} />
+              {exporting ? 'Exportando...' : 'CSV'}
+            </button>
+            <button onClick={handleExportPDF} disabled={exportingPDF} style={{ ...s.exportBtn, background: '#fef2f2', borderColor: '#fca5a5', color: '#dc2626' }}>
+              <Download size={14} strokeWidth={2} />
+              {exportingPDF ? 'Generando...' : 'PDF'}
+            </button>
+          </div>
         </div>
 
         {/* ── STATS TAB ── */}
         {tab === 'stats' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            <div style={s.card}>
-              <h3 style={{ margin: '0 0 20px', fontSize: '16px', fontWeight: '700', color: 'var(--c-text)' }}>Reportes por categoría</h3>
-              {catStats.length === 0 ? (
-                <p style={s.empty}>Sin datos</p>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {catStats.map(([nombre, count]) => (
-                    <div key={nombre}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                        <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--c-text)', textTransform: 'capitalize' }}>{nombre}</span>
-                        <span style={{ fontSize: '13px', color: 'var(--c-text-2)' }}>{count}</span>
+            {loadingStats ? (
+              <div style={s.list}>{Array.from({ length: 3 }).map((_, i) => <RowSkeleton key={i} />)}</div>
+            ) : stats ? (
+              <>
+                {/* Métricas principales */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '16px' }}>
+                  {[
+                    { label: 'Tasa de resolución', value: `${stats.tasaResolucion}%`, color: '#16a34a', icon: CheckCircle },
+                    { label: 'Categorías activas', value: stats.porCategoria?.length ?? 0, color: '#7c3aed', icon: BarChart2 },
+                    { label: 'Pendientes', value: stats.porEstado?.pendiente ?? 0, color: '#f59e0b', icon: Clock },
+                    { label: 'Rechazados', value: stats.porEstado?.rechazado ?? 0, color: '#ef4444', icon: AlertCircle },
+                  ].map(({ label, value, color, icon: Icon }) => (
+                    <div key={label} style={{ ...s.card, textAlign: 'center', padding: '20px 16px' }}>
+                      <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: color + '18', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 10px' }}>
+                        <Icon size={18} color={color} strokeWidth={2} />
                       </div>
-                      <div style={{ height: '8px', background: 'var(--c-bg)', borderRadius: '4px', overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: `${(count / maxCat) * 100}%`, background: '#2563eb', borderRadius: '4px', transition: 'width .4s ease' }} />
-                      </div>
+                      <p style={{ fontSize: '28px', fontWeight: '800', color, margin: '0 0 4px' }}>{value}</p>
+                      <p style={{ fontSize: '12px', color: 'var(--c-text-3)', margin: 0 }}>{label}</p>
                     </div>
                   ))}
                 </div>
-              )}
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-              {[
-                { label: 'Tasa de resolución', value: total > 0 ? `${Math.round((resueltos / total) * 100)}%` : '—', color: '#16a34a' },
-                { label: 'Promedio por estado', value: total > 0 ? `${Math.round(total / 3)}` : '—', color: '#2563eb' },
-                { label: 'Categorías activas', value: catStats.length, color: '#7c3aed' },
-              ].map(({ label, value, color }) => (
-                <div key={label} style={{ ...s.card, textAlign: 'center' }}>
-                  <p style={{ fontSize: '32px', fontWeight: '800', color, margin: '0 0 4px' }}>{value}</p>
-                  <p style={{ fontSize: '13px', color: 'var(--c-text-3)', margin: 0 }}>{label}</p>
-                </div>
-              ))}
-            </div>
 
-            {/* Tendencia semanal */}
-            <div style={s.card}>
-              <h3 style={{ margin: '0 0 20px', fontSize: '16px', fontWeight: '700', color: 'var(--c-text)' }}>Tendencia semanal (últimas 8 semanas)</h3>
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', height: '120px' }}>
-                {weeklyTrend.map((w) => (
-                  <div key={w.label} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', height: '100%', justifyContent: 'flex-end' }}>
-                    <span style={{ fontSize: '11px', color: 'var(--c-text-3)', fontWeight: '600' }}>{w.count || ''}</span>
-                    <div style={{ width: '100%', background: '#2563eb', borderRadius: '4px 4px 0 0', height: `${Math.max((w.count / maxWeek) * 90, w.count > 0 ? 8 : 2)}px`, transition: 'height .3s', opacity: w.count === 0 ? 0.2 : 1 }} />
-                    <span style={{ fontSize: '10px', color: 'var(--c-text-3)' }}>{w.label}</span>
+                {/* Tendencia mensual */}
+                <div style={s.card}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
+                    <TrendingUp size={16} color="#2563eb" strokeWidth={2} />
+                    <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: 'var(--c-text)' }}>Tendencia mensual (últimos 12 meses)</h3>
                   </div>
-                ))}
-              </div>
-            </div>
+                  {stats.tendenciaMensual?.length > 0 ? (
+                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px', height: '140px' }}>
+                      {stats.tendenciaMensual.map((m) => {
+                        const maxVal = Math.max(...stats.tendenciaMensual.map((x) => x.count), 1);
+                        return (
+                          <div key={m.mes} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', height: '100%', justifyContent: 'flex-end' }}>
+                            <span style={{ fontSize: '10px', color: 'var(--c-text-3)', fontWeight: '600' }}>{m.count || ''}</span>
+                            <div
+                              title={`${m.mes}: ${m.count} reportes`}
+                              style={{
+                                width: '100%',
+                                background: m.count > 0 ? '#2563eb' : 'var(--c-border)',
+                                borderRadius: '4px 4px 0 0',
+                                height: `${Math.max((m.count / maxVal) * 110, m.count > 0 ? 8 : 2)}px`,
+                                transition: 'height .3s',
+                                cursor: 'default',
+                              }}
+                            />
+                            <span style={{ fontSize: '9px', color: 'var(--c-text-3)', textAlign: 'center', lineHeight: '1.2' }}>{m.label}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : <p style={s.empty}>Sin datos</p>}
+                </div>
+
+                {/* Por categoría */}
+                <div style={s.card}>
+                  <h3 style={{ margin: '0 0 20px', fontSize: '16px', fontWeight: '700', color: 'var(--c-text)' }}>Reportes por categoría</h3>
+                  {stats.porCategoria?.length === 0 ? (
+                    <p style={s.empty}>Sin datos</p>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      {stats.porCategoria?.map(({ nombre, count }) => {
+                        const maxCat = stats.porCategoria[0]?.count || 1;
+                        return (
+                          <div key={nombre}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                              <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--c-text)', textTransform: 'capitalize' }}>{nombre}</span>
+                              <span style={{ fontSize: '13px', color: 'var(--c-text-2)' }}>{count} <span style={{ color: 'var(--c-text-3)', fontSize: '11px' }}>({Math.round((count / stats.total) * 100)}%)</span></span>
+                            </div>
+                            <div style={{ height: '8px', background: 'var(--c-bg)', borderRadius: '4px', overflow: 'hidden' }}>
+                              <div style={{ height: '100%', width: `${(count / maxCat) * 100}%`, background: '#2563eb', borderRadius: '4px', transition: 'width .4s ease' }} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Por estado */}
+                <div style={s.card}>
+                  <h3 style={{ margin: '0 0 20px', fontSize: '16px', fontWeight: '700', color: 'var(--c-text)' }}>Distribución por estado</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
+                    {Object.entries(stats.porEstado || {}).map(([estado, count]) => {
+                      const colors = { pendiente: '#f59e0b', verificado: '#3b82f6', en_proceso: '#8b5cf6', resuelto: '#16a34a', rechazado: '#ef4444' };
+                      const color  = colors[estado] || '#6b7280';
+                      const labels = { pendiente: 'Pendiente', verificado: 'Verificado', en_proceso: 'En proceso', resuelto: 'Resuelto', rechazado: 'Rechazado' };
+                      return (
+                        <div key={estado} style={{ background: color + '10', borderRadius: '10px', padding: '14px', border: `1px solid ${color}30`, textAlign: 'center' }}>
+                          <p style={{ fontSize: '24px', fontWeight: '800', color, margin: '0 0 4px' }}>{count}</p>
+                          <p style={{ fontSize: '12px', color, fontWeight: '600', margin: 0 }}>{labels[estado] || estado}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <p style={s.empty}>No se pudieron cargar las estadísticas.</p>
+            )}
           </div>
         )}
 

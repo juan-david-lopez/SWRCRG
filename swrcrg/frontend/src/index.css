@@ -14,6 +14,15 @@
   --c-nav-bg:    #ffffff;
   --c-hero-bg:   linear-gradient(135deg, #e8edf5 0%, #d1dce8 100%);
   --c-section-alt: #f8fafc;
+  --c-auth-brand-bg: linear-gradient(145deg, #0f172a 0%, #1e3a5f 50%, #1e40af 100%);
+  --c-auth-brand-text: rgba(255,255,255,0.85);
+  --c-auth-brand-text-2: rgba(255,255,255,0.7);
+  --c-auth-brand-text-3: rgba(255,255,255,0.5);
+  --c-auth-brand-logo: rgba(255,255,255,0.5);
+  --c-auth-brand-feature-bg: rgba(255,255,255,0.15);
+  --c-auth-brand-divider: rgba(255,255,255,0.2);
+  --c-auth-brand-testimonial: rgba(255,255,255,0.08);
+  --c-auth-brand-testimonial-border: rgba(255,255,255,0.3);
 
   --sans: 'Plus Jakarta Sans', system-ui, 'Segoe UI', Roboto, sans-serif;
   --heading: 'Plus Jakarta Sans', system-ui, 'Segoe UI', Roboto, sans-serif;
@@ -45,6 +54,15 @@
   --c-nav-bg:    #1a1d27;
   --c-hero-bg:   linear-gradient(135deg, #1a1d27 0%, #0f1117 100%);
   --c-section-alt: #13161f;
+  --c-auth-brand-bg: linear-gradient(145deg, #0d1117 0%, #0f1f3d 50%, #1a2f6e 100%);
+  --c-auth-brand-text: rgba(255,255,255,0.9);
+  --c-auth-brand-text-2: rgba(255,255,255,0.65);
+  --c-auth-brand-text-3: rgba(255,255,255,0.4);
+  --c-auth-brand-logo: rgba(255,255,255,0.4);
+  --c-auth-brand-feature-bg: rgba(255,255,255,0.1);
+  --c-auth-brand-divider: rgba(255,255,255,0.15);
+  --c-auth-brand-testimonial: rgba(255,255,255,0.06);
+  --c-auth-brand-testimonial-border: rgba(255,255,255,0.2);
 }
 
 body {

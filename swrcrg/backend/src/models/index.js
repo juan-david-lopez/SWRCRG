@@ -24,7 +24,6 @@ const HistorialEstado      = require('./historialEstado.model')(sequelize, DataT
 const ComentarioReporte    = require('./comentarioReporte.model')(sequelize, DataTypes);
 const Notificacion         = require('./notificacion.model')(sequelize, DataTypes);
 const ComentarioLike       = require('./comentarioLike.model')(sequelize, DataTypes);
-const CodigoVerificacion   = require('./codigoVerificacion.model')(sequelize, DataTypes);
 
 // ── Asociaciones ──────────────────────────────────────────────────────────────
 
@@ -89,5 +88,4 @@ module.exports = {
   ComentarioReporte,
   ComentarioLike,
   Notificacion,
-  CodigoVerificacion,
 };

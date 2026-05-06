@@ -16,7 +16,18 @@ export const createReportForm = (formData) => {
   });
 };
 
-export const getReports         = (sortBy = 'fecha')        => get(`/reportes?sortBy=${sortBy}`);
+export const getReports = (params = {}) => {
+  const qs = new URLSearchParams();
+  if (params.sortBy)     qs.set('sortBy',     params.sortBy);
+  if (params.page)       qs.set('page',       params.page);
+  if (params.limit)      qs.set('limit',      params.limit);
+  if (params.search)     qs.set('search',     params.search);
+  if (params.estado)     qs.set('estado',     params.estado);
+  if (params.categoria)  qs.set('categoria',  params.categoria);
+  if (params.fechaDesde) qs.set('fechaDesde', params.fechaDesde);
+  if (params.fechaHasta) qs.set('fechaHasta', params.fechaHasta);
+  return get(`/reportes?${qs.toString()}`);
+};
 export const getReport          = (id)                  => get(`/reportes/${id}`);
 export const getMyReports       = ()                    => get('/reportes/me/reportes');
 export const getReportsByCategory = (catId)             => get(`/reportes/categoria/${catId}`);
@@ -63,3 +74,21 @@ export const exportReportsCSV   = () => {
     URL.revokeObjectURL(url);
   });
 };
+
+export const exportReportsPDF = () => {
+  const token = localStorage.getItem('token');
+  return fetch(`${BASE_URL}/reportes/exportar/pdf`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  }).then(async (res) => {
+    if (!res.ok) throw new Error('Error al exportar PDF');
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `reportes-${Date.now()}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+};
+
+export const getEstadisticas = () => get('/reportes/estadisticas');

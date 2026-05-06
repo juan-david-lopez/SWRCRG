@@ -23,9 +23,29 @@ const crear = handle(async (req, res) => {
 
 const listar = handle(async (req, res) => {
   const incluirRechazados = req.user?.rol === 'administrador';
-  const sortBy = req.query.sortBy === 'votos' ? 'votos' : 'fecha';
-  const reportes = await reporteService.listar({ incluirRechazados, sortBy });
-  res.json({ reportes });
+  const {
+    sortBy    = 'fecha',
+    page      = 1,
+    limit     = 10,
+    search    = '',
+    estado    = '',
+    categoria = '',
+    fechaDesde = '',
+    fechaHasta = '',
+  } = req.query;
+
+  const result = await reporteService.listar({
+    incluirRechazados,
+    sortBy,
+    page:      Number(page),
+    limit:     Math.min(Number(limit) || 10, 50), // máx 50 por página
+    search,
+    estado,
+    categoria,
+    fechaDesde,
+    fechaHasta,
+  });
+  res.json(result);
 });
 
 const listarPorCategoria = handle(async (req, res) => {
@@ -123,7 +143,7 @@ const asignar = handle(async (req, res) => {
 });
 
 const exportarCSV = handle(async (req, res) => {
-  const reportes = await reporteService.listar({ incluirRechazados: true }); // admin ve todo
+  const reportes = await reporteService.listarTodos({ incluirRechazados: true });
   const header = ['ID', 'Título', 'Descripción', 'Estado', 'Categoría', 'Dirección', 'Latitud', 'Longitud', 'Usuario', 'Fecha'];
   const rows = reportes.map((r) => [
     r.id,
@@ -140,7 +160,158 @@ const exportarCSV = handle(async (req, res) => {
   const csv = [header.join(','), ...rows].join('\n');
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', `attachment; filename="reportes-${Date.now()}.csv"`);
-  res.send('\uFEFF' + csv); // BOM para Excel
+  res.send('\uFEFF' + csv);
 });
 
-module.exports = { crear, listar, listarPorCategoria, obtener, misReportes, cambiarEstado, reenviarParaRevision, subirImagen, eliminarImagen, editar, eliminar, votar, cercanos, exportarCSV, reportarContenido, asignar };
+const exportarPDF = handle(async (req, res) => {
+  const PDFDocument = require('pdfkit');
+  const reportes = await reporteService.listarTodos({ incluirRechazados: true });
+
+  const doc = new PDFDocument({ margin: 40, size: 'A4' });
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="reportes-${Date.now()}.pdf"`);
+  doc.pipe(res);
+
+  // ── Encabezado ──
+  doc.fontSize(20).font('Helvetica-Bold').text('SWRCRG — Reporte de Ciudadanos', { align: 'center' });
+  doc.fontSize(10).font('Helvetica').fillColor('#666')
+    .text(`Generado el ${new Date().toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' })}`, { align: 'center' });
+  doc.moveDown(0.5);
+
+  // ── Resumen estadístico ──
+  const total      = reportes.length;
+  const pendientes = reportes.filter((r) => r.estado?.nombre === 'pendiente').length;
+  const verificados = reportes.filter((r) => r.estado?.nombre === 'verificado').length;
+  const enProceso  = reportes.filter((r) => r.estado?.nombre === 'en_proceso').length;
+  const resueltos  = reportes.filter((r) => r.estado?.nombre === 'resuelto').length;
+  const rechazados = reportes.filter((r) => r.estado?.nombre === 'rechazado').length;
+
+  doc.moveTo(40, doc.y).lineTo(555, doc.y).strokeColor('#e5e7eb').stroke();
+  doc.moveDown(0.5);
+  doc.fontSize(13).font('Helvetica-Bold').fillColor('#111').text('Resumen');
+  doc.moveDown(0.3);
+
+  const stats = [
+    ['Total de reportes', total],
+    ['Pendientes', pendientes],
+    ['Verificados', verificados],
+    ['En proceso', enProceso],
+    ['Resueltos', resueltos],
+    ['Rechazados', rechazados],
+    ['Tasa de resolución', total > 0 ? `${Math.round((resueltos / total) * 100)}%` : '0%'],
+  ];
+
+  stats.forEach(([label, value]) => {
+    doc.fontSize(10).font('Helvetica').fillColor('#374151')
+      .text(`${label}:`, { continued: true, width: 200 })
+      .font('Helvetica-Bold').fillColor('#111').text(` ${value}`);
+  });
+
+  doc.moveDown(0.5);
+  doc.moveTo(40, doc.y).lineTo(555, doc.y).strokeColor('#e5e7eb').stroke();
+  doc.moveDown(0.5);
+
+  // ── Tabla de reportes ──
+  doc.fontSize(13).font('Helvetica-Bold').fillColor('#111').text('Listado de reportes');
+  doc.moveDown(0.5);
+
+  const colWidths = [180, 70, 80, 100, 80]; // Título, Estado, Categoría, Usuario, Fecha
+  const headers   = ['Título', 'Estado', 'Categoría', 'Usuario', 'Fecha'];
+  const startX    = 40;
+
+  // Cabecera de tabla
+  doc.rect(startX, doc.y, colWidths.reduce((a, b) => a + b, 0), 18).fill('#2563eb');
+  let x = startX;
+  headers.forEach((h, i) => {
+    doc.fontSize(9).font('Helvetica-Bold').fillColor('#fff')
+      .text(h, x + 4, doc.y - 14, { width: colWidths[i] - 8, lineBreak: false });
+    x += colWidths[i];
+  });
+  doc.moveDown(0.2);
+
+  // Filas
+  const STATUS_ES = { pendiente: 'Pendiente', verificado: 'Verificado', en_proceso: 'En proceso', resuelto: 'Resuelto', rechazado: 'Rechazado' };
+  reportes.forEach((r, idx) => {
+    if (doc.y > 750) { doc.addPage(); }
+
+    const rowY  = doc.y;
+    const rowH  = 16;
+    const fill  = idx % 2 === 0 ? '#f9fafb' : '#ffffff';
+    doc.rect(startX, rowY, colWidths.reduce((a, b) => a + b, 0), rowH).fill(fill);
+
+    const cells = [
+      (r.titulo || '').slice(0, 28),
+      STATUS_ES[r.estado?.nombre] || r.estado?.nombre || '',
+      (r.categoria?.nombre || '').replace(/_/g, ' ').slice(0, 14),
+      r.usuario ? `${r.usuario.nombre} ${r.usuario.apellido}`.slice(0, 18) : '',
+      r.fecha_reporte ? new Date(r.fecha_reporte).toLocaleDateString('es-CO') : '',
+    ];
+
+    x = startX;
+    cells.forEach((cell, i) => {
+      doc.fontSize(8).font('Helvetica').fillColor('#374151')
+        .text(cell, x + 4, rowY + 4, { width: colWidths[i] - 8, lineBreak: false });
+      x += colWidths[i];
+    });
+    doc.y = rowY + rowH;
+  });
+
+  doc.end();
+});
+
+const estadisticas = handle(async (req, res) => {
+  const reportes = await reporteService.listarTodos({ incluirRechazados: true });
+
+  const total      = reportes.length;
+  const porEstado  = {};
+  const porCategoria = {};
+  const porMes    = {};
+
+  reportes.forEach((r) => {
+    // Por estado
+    const est = r.estado?.nombre || 'desconocido';
+    porEstado[est] = (porEstado[est] || 0) + 1;
+
+    // Por categoría
+    const cat = r.categoria?.nombre?.replace(/_/g, ' ') || 'Sin categoría';
+    porCategoria[cat] = (porCategoria[cat] || 0) + 1;
+
+    // Por mes (últimos 12 meses)
+    const fecha = new Date(r.fecha_reporte);
+    const key   = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
+    porMes[key] = (porMes[key] || 0) + 1;
+  });
+
+  // Generar los últimos 12 meses aunque no tengan datos
+  const meses = [];
+  const now   = new Date();
+  for (let i = 11; i >= 0; i--) {
+    const d   = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    meses.push({
+      mes:   key,
+      label: d.toLocaleDateString('es-CO', { month: 'short', year: '2-digit' }),
+      count: porMes[key] || 0,
+    });
+  }
+
+  const resueltos  = porEstado['resuelto']  || 0;
+  const pendientes = porEstado['pendiente'] || 0;
+
+  res.json({
+    total,
+    porEstado,
+    porCategoria: Object.entries(porCategoria)
+      .sort((a, b) => b[1] - a[1])
+      .map(([nombre, count]) => ({ nombre, count })),
+    tendenciaMensual: meses,
+    tasaResolucion:   total > 0 ? Math.round((resueltos / total) * 100) : 0,
+    tiempoPromedioResolucion: null, // requeriría timestamps adicionales
+    topCategorias: Object.entries(porCategoria)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([nombre, count]) => ({ nombre, count })),
+  });
+});
+
+module.exports = { crear, listar, listarPorCategoria, obtener, misReportes, cambiarEstado, reenviarParaRevision, subirImagen, eliminarImagen, editar, eliminar, votar, cercanos, exportarCSV, exportarPDF, estadisticas, reportarContenido, asignar };

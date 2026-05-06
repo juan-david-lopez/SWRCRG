@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { LogOut, Home, Plus, History, User, MapPin, Calendar, Flag, ImageOff, Pencil, Trash2, X, Check, XCircle, RotateCcw } from 'lucide-react';
+import { Plus, MapPin, Calendar, Flag, ImageOff, Pencil, Trash2, X, Check, XCircle, RotateCcw } from 'lucide-react';
 import { getMyReports, editReport, deleteReport, reenviarReporte } from '../../services/report.service';
 import { useAuth } from '../../context/AuthContext';
 import { STATUS_COLORS, STATUS_LABEL } from '../../constants/reportStatus';
@@ -156,7 +156,7 @@ const EmptyState = ({ onCreateClick }) => (
 
 /* ── Main ── */
 const MyReportsPage = () => {
-  const { user, logout }      = useAuth();
+  const { user }              = useAuth();
   const navigate              = useNavigate();
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -212,21 +212,9 @@ const MyReportsPage = () => {
   };
 
   const initials = user ? `${user.nombre?.[0] ?? ''}${user.apellido?.[0] ?? ''}`.toUpperCase() : '';
-  const handleLogout = () => { logout(); navigate('/login'); };
 
   return (
     <div style={s.page}>
-      <div style={s.topBar}>
-        <span style={s.topTitle}>Mis reportes</span>
-        <div style={s.topRight}>
-          <div style={s.avatar}>{initials}</div>
-          <button onClick={handleLogout} style={s.logoutBtn}>
-            <LogOut size={15} strokeWidth={2} />
-            Cerrar sesión
-          </button>
-        </div>
-      </div>
-
       <div style={s.content}>
         {loading && (
           <div style={s.list}>
@@ -251,13 +239,6 @@ const MyReportsPage = () => {
         )}
       </div>
 
-      <nav style={s.bottomNav}>
-        <NavItem icon={<Home size={20} strokeWidth={1.8} />}    label="Inicio"   onClick={() => navigate('/')} />
-        <NavItem icon={<Plus size={20} strokeWidth={1.8} />}    label="Reportar" onClick={() => navigate('/reports/create')} />
-        <NavItem icon={<History size={20} strokeWidth={1.8} />} label="Historial" onClick={() => {}} active />
-        <NavItem icon={<User size={20} strokeWidth={1.8} />}    label="Perfil"   onClick={() => navigate('/perfil')} />
-      </nav>
-
       {editing && (
         <EditModal report={editing} onSave={handleSaveEdit} onCancel={() => setEditing(null)} />
       )}
@@ -279,21 +260,9 @@ const MyReportsPage = () => {
   );
 };
 
-const NavItem = ({ icon, label, onClick, active }) => (
-  <button onClick={onClick} style={{ ...s.navItem, background: active ? 'var(--c-primary-bg)' : 'transparent' }}>
-    <span style={{ color: active ? '#2563eb' : 'var(--c-text-2)' }}>{icon}</span>
-    <span style={{ ...s.navLabel, color: active ? '#2563eb' : 'var(--c-text-2)', fontWeight: active ? '700' : '500' }}>{label}</span>
-  </button>
-);
-
 const s = {
-  page:        { minHeight: '100vh', background: 'var(--c-bg)', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", display: 'flex', flexDirection: 'column' },
-  topBar:      { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 24px', background: 'var(--c-surface)', borderBottom: '1px solid var(--c-border)', flexShrink: 0 },
-  topTitle:    { fontSize: '17px', fontWeight: '700', color: 'var(--c-text)' },
-  topRight:    { display: 'flex', alignItems: 'center', gap: '12px' },
-  avatar:      { width: '34px', height: '34px', borderRadius: '50%', background: '#2563eb', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '700' },
-  logoutBtn:   { display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#ef4444' },
-  content:     { flex: 1, maxWidth: '720px', width: '100%', margin: '0 auto', padding: '28px 20px 100px' },
+  page:        { minHeight: '100vh', background: 'var(--c-bg)', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" },
+  content:     { maxWidth: '720px', width: '100%', margin: '0 auto', padding: '28px 20px 60px' },
   sectionTitle:{ fontSize: '20px', fontWeight: '700', color: 'var(--c-text)', margin: '0 0 20px', display: 'flex', alignItems: 'center', gap: '10px' },
   count:       { fontSize: '13px', fontWeight: '600', background: 'var(--c-bg)', color: 'var(--c-text-2)', padding: '2px 10px', borderRadius: '20px' },
   list:        { display: 'flex', flexDirection: 'column', gap: '16px' },
@@ -324,9 +293,6 @@ const s = {
   emptyTitle:  { fontSize: '20px', fontWeight: '700', color: 'var(--c-text)', margin: 0 },
   emptyDesc:   { fontSize: '14px', color: 'var(--c-text-2)', margin: 0, textAlign: 'center' },
   emptyBtn:    { display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', padding: '13px 32px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '15px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit' },
-  bottomNav:   { position: 'fixed', bottom: 0, left: 0, right: 0, background: 'var(--c-surface)', borderTop: '1px solid var(--c-border)', display: 'flex', justifyContent: 'space-around', padding: '8px 0 12px', zIndex: 100 },
-  navItem:     { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', border: 'none', cursor: 'pointer', padding: '6px 20px', borderRadius: '10px' },
-  navLabel:    { fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' },
 };
 
 const em = {

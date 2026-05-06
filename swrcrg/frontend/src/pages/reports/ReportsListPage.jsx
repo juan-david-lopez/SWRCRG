@@ -198,66 +198,44 @@ const ReportsListPage = () => {
   const [search, setSearch]             = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterCat, setFilterCat]       = useState('');
-  const [filterDate, setFilterDate]     = useState('');   // preset
-  const [dateFrom, setDateFrom]         = useState('');   // YYYY-MM-DD
-  const [dateTo, setDateTo]             = useState('');   // YYYY-MM-DD
+  const [filterDate, setFilterDate]     = useState('');
+  const [dateFrom, setDateFrom]         = useState('');
+  const [dateTo, setDateTo]             = useState('');
   const [page, setPage]                 = useState(1);
+  const [totalPages, setTotalPages]     = useState(1);
+  const [total, setTotal]               = useState(0);
   const [sortBy, setSortBy]             = useState('fecha');
 
-  useEffect(() => {
-    Promise.all([getReports(sortBy === 'votos' ? 'votos' : 'fecha'), getCategorias()])
-      .then(([{ reportes }, { categorias }]) => { setReports(reportes); setCategorias(categorias); })
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
-  }, [sortBy]);
-
-  useEffect(() => { setPage(1); }, [search, filterStatus, filterCat, filterDate, dateFrom, dateTo, sortBy]);
-
-  // Calcula el rango de fechas según el preset activo
-  const dateRange = useMemo(() => {
+  // Calcula fechaDesde/fechaHasta según preset
+  const { fechaDesde, fechaHasta } = useMemo(() => {
+    const fmt = (d) => d.toISOString().split('T')[0];
     const now = new Date();
-    now.setHours(23, 59, 59, 999);
-    if (filterDate === 'today') {
-      const from = new Date(); from.setHours(0, 0, 0, 0);
-      return { from, to: now };
-    }
-    if (filterDate === 'week')  return { from: startOfWeek(), to: now };
-    if (filterDate === 'month') return { from: startOfMonth(), to: now };
-    if (filterDate === 'custom' && (dateFrom || dateTo)) {
-      return {
-        from: dateFrom ? new Date(dateFrom + 'T00:00:00') : null,
-        to:   dateTo   ? new Date(dateTo   + 'T23:59:59') : null,
-      };
-    }
-    return null;
+    if (filterDate === 'today')  return { fechaDesde: fmt(now), fechaHasta: fmt(now) };
+    if (filterDate === 'week')   return { fechaDesde: fmt(startOfWeek()), fechaHasta: fmt(now) };
+    if (filterDate === 'month')  return { fechaDesde: fmt(startOfMonth()), fechaHasta: fmt(now) };
+    if (filterDate === 'custom') return { fechaDesde: dateFrom, fechaHasta: dateTo };
+    return { fechaDesde: '', fechaHasta: '' };
   }, [filterDate, dateFrom, dateTo]);
 
-  const filtered = useMemo(() => {
-    const base = reports.filter((r) => {
-      const q = search.toLowerCase();
-      const matchSearch = !q ||
-        r.titulo?.toLowerCase().includes(q) ||
-        r.descripcion?.toLowerCase().includes(q) ||
-        r.direccion_referencia?.toLowerCase().includes(q);
-      const matchStatus = !filterStatus || r.estado?.nombre === filterStatus;
-      const matchCat    = !filterCat    || r.categoria?.id === filterCat;
+  const fetchReports = () => {
+    setLoading(true);
+    setError('');
+    Promise.all([
+      getReports({ sortBy, page, limit: PAGE_SIZE, search, estado: filterStatus, categoria: filterCat, fechaDesde, fechaHasta }),
+      categorias.length === 0 ? getCategorias() : Promise.resolve({ categorias }),
+    ])
+      .then(([data, catData]) => {
+        setReports(data.reportes ?? []);
+        setTotal(data.total ?? 0);
+        setTotalPages(data.totalPages ?? 1);
+        if (catData?.categorias) setCategorias(catData.categorias);
+      })
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  };
 
-      let matchDate = true;
-      if (dateRange) {
-        const fecha = new Date(r.fecha_reporte ?? r.created_at);
-        if (dateRange.from && fecha < dateRange.from) matchDate = false;
-        if (dateRange.to   && fecha > dateRange.to)   matchDate = false;
-      }
-
-      return matchSearch && matchStatus && matchCat && matchDate;
-    });
-
-    if (sortBy === 'estado') return [...base].sort((a, b) => (a.estado?.nombre ?? '').localeCompare(b.estado?.nombre ?? ''));
-    return base;
-  }, [reports, search, filterStatus, filterCat, dateRange, sortBy]);
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paginated  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  useEffect(() => { fetchReports(); }, [sortBy, page, search, filterStatus, filterCat, fechaDesde, fechaHasta]);
+  useEffect(() => { setPage(1); }, [search, filterStatus, filterCat, filterDate, dateFrom, dateTo, sortBy]);
 
   const clearFilters = () => {
     setSearch(''); setFilterStatus(''); setFilterCat('');
@@ -265,7 +243,6 @@ const ReportsListPage = () => {
   };
   const hasFilters = search || filterStatus || filterCat || filterDate;
 
-  // Etiqueta del rango activo para el contador
   const dateLabel = useMemo(() => {
     if (!filterDate) return '';
     if (filterDate === 'custom') {
@@ -360,7 +337,7 @@ const ReportsListPage = () => {
         {/* results count */}
         {!loading && !error && (
           <p style={s.resultsCount}>
-            {filtered.length} reporte{filtered.length !== 1 ? 's' : ''}
+            {total} reporte{total !== 1 ? 's' : ''}
             {hasFilters ? ' encontrados' : ' en total'}
             {dateLabel && <span style={{ color: '#2563eb', fontWeight: '600' }}>{dateLabel}</span>}
           </p>
@@ -374,7 +351,7 @@ const ReportsListPage = () => {
         )}
         {error && <p style={{ ...s.center, color: '#dc2626' }}>{error}</p>}
 
-        {!loading && !error && filtered.length === 0 && (
+        {!loading && !error && reports.length === 0 && (
           <div style={s.emptyWrap}>
             <p style={s.empty}>No se encontraron reportes{hasFilters ? ' con esos filtros' : ''}.</p>
             {hasFilters && (
@@ -383,9 +360,9 @@ const ReportsListPage = () => {
           </div>
         )}
 
-        {!loading && !error && paginated.length > 0 && (
+        {!loading && !error && reports.length > 0 && (
           <div style={s.list}>
-            {paginated.map((r) => <ReportCard key={r.id} report={r} />)}
+            {reports.map((r) => <ReportCard key={r.id} report={r} />)}
           </div>
         )}
 
@@ -400,7 +377,14 @@ const ReportsListPage = () => {
               ← Anterior
             </button>
             <div style={s.pageNumbers}>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+              {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                // Mostrar máx 7 páginas centradas en la actual
+                const half = 3;
+                let start = Math.max(1, page - half);
+                const end = Math.min(totalPages, start + 6);
+                start = Math.max(1, end - 6);
+                return start + i;
+              }).map((n) => (
                 <button
                   key={n}
                   onClick={() => setPage(n)}

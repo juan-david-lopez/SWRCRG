@@ -3,13 +3,15 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, ArrowLeft, MapPin, BarChart2, Bell } from 'lucide-react';
 import { login } from '../services/auth.service';
 import { useAuth } from '../context/AuthContext';
+import FormInput from '../components/FormInput';
+import Button from '../components/Button';
 
 const Feature = ({ icon: Icon, text }) => (
   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-    <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+    <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--c-auth-brand-feature-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
       <Icon size={18} strokeWidth={1.8} color="#fff" />
     </div>
-    <span style={{ fontSize: '14px', color: 'rgba(255,255,255,0.85)', lineHeight: '1.4' }}>{text}</span>
+    <span style={{ fontSize: '14px', color: 'var(--c-auth-brand-text)', lineHeight: '1.4' }}>{text}</span>
   </div>
 );
 
@@ -53,31 +55,38 @@ const LoginPage = () => {
           </div>
 
           <form onSubmit={handleSubmit} style={s.form} noValidate>
-            <div style={s.fieldGroup}>
-              <label style={s.label}>Correo electrónico</label>
-              <div style={{ ...s.inputWrap, borderColor: error ? '#ef4444' : 'var(--c-border)' }}>
-                <Mail size={16} strokeWidth={1.8} color="var(--c-text-3)" style={{ flexShrink: 0 }} />
-                <input name="correo" type="email" value={form.correo} placeholder="tu@correo.com"
-                  onChange={handleChange} style={s.input} autoComplete="email" />
-              </div>
-            </div>
+            <FormInput
+              icon={Mail}
+              label="Correo electrónico"
+              name="correo"
+              type="email"
+              value={form.correo}
+              placeholder="tu@correo.com"
+              onChange={handleChange}
+              error={error && form.correo ? undefined : undefined}
+              autoComplete="email"
+            />
 
-            <div style={s.fieldGroup}>
-              <label style={s.label}>Contraseña</label>
-              <div style={{ ...s.inputWrap, borderColor: error ? '#ef4444' : 'var(--c-border)' }}>
-                <Lock size={16} strokeWidth={1.8} color={error ? '#ef4444' : 'var(--c-text-3)'} style={{ flexShrink: 0 }} />
-                <input name="contrasena" type={showPwd ? 'text' : 'password'} value={form.contrasena}
-                  placeholder="••••••••" onChange={handleChange} style={s.input} autoComplete="current-password" />
+            <FormInput
+              icon={Lock}
+              label="Contraseña"
+              name="contrasena"
+              type={showPwd ? 'text' : 'password'}
+              value={form.contrasena}
+              placeholder="••••••••"
+              onChange={handleChange}
+              error={error || undefined}
+              autoComplete="current-password"
+              right={
                 <button type="button" onClick={() => setShowPwd(!showPwd)} style={s.eyeBtn} tabIndex={-1}>
                   {showPwd ? <EyeOff size={16} color="var(--c-text-3)" /> : <Eye size={16} color="var(--c-text-3)" />}
                 </button>
-              </div>
-              {error && <span style={s.fieldErr}>{error}</span>}
-            </div>
+              }
+            />
 
-            <button type="submit" disabled={loading} style={{ ...s.btn, opacity: loading ? 0.7 : 1 }}>
-              {loading ? 'Entrando...' : 'Iniciar sesión'}
-            </button>
+            <Button type="submit" loading={loading} fullWidth size="lg" style={{ marginTop: '4px' }}>
+              Iniciar sesión
+            </Button>
           </form>
 
           <p style={s.switchText}>
@@ -146,17 +155,17 @@ const s = {
   switchLink:  { color: '#2563eb', fontWeight: '700', textDecoration: 'none' },
 
   /* Brand panel */
-  brandPanel:  { flex: '0 0 50%', background: 'linear-gradient(145deg, #1e40af 0%, #2563eb 50%, #3b82f6 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 48px', position: 'relative', overflow: 'hidden' },
+  brandPanel:  { flex: '0 0 50%', background: 'var(--c-auth-brand-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 48px', position: 'relative', overflow: 'hidden' },
   brandInner:  { position: 'relative', zIndex: 1, maxWidth: '420px' },
-  brandLogo:   { fontSize: '14px', fontWeight: '800', color: 'rgba(255,255,255,0.7)', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '32px' },
+  brandLogo:   { fontSize: '14px', fontWeight: '800', color: 'var(--c-auth-brand-logo)', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '32px' },
   brandTitle:  { fontSize: '36px', fontWeight: '800', color: '#fff', margin: '0 0 16px', lineHeight: '1.15', letterSpacing: '-0.5px' },
-  brandDesc:   { fontSize: '15px', color: 'rgba(255,255,255,0.75)', margin: '0 0 40px', lineHeight: '1.7' },
+  brandDesc:   { fontSize: '15px', color: 'var(--c-auth-brand-text-2)', margin: '0 0 40px', lineHeight: '1.7' },
   features:    { display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '48px' },
-  brandStats:  { display: 'flex', alignItems: 'center', gap: '24px', paddingTop: '32px', borderTop: '1px solid rgba(255,255,255,0.2)' },
+  brandStats:  { display: 'flex', alignItems: 'center', gap: '24px', paddingTop: '32px', borderTop: '1px solid var(--c-auth-brand-divider)' },
   stat:        { display: 'flex', flexDirection: 'column', gap: '2px' },
   statNum:     { fontSize: '22px', fontWeight: '800', color: '#fff' },
-  statLabel:   { fontSize: '12px', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.5px' },
-  statDivider: { width: '1px', height: '36px', background: 'rgba(255,255,255,0.2)' },
+  statLabel:   { fontSize: '12px', color: 'var(--c-auth-brand-text-3)', textTransform: 'uppercase', letterSpacing: '0.5px' },
+  statDivider: { width: '1px', height: '36px', background: 'var(--c-auth-brand-divider)' },
 
   /* Responsive: en móvil solo el formulario */
   '@media (max-width: 768px)': { brandPanel: { display: 'none' }, formPanel: { flex: '1' } },

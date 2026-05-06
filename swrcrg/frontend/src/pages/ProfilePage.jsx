@@ -7,6 +7,8 @@ import { toast } from '../components/Toast';
 import { RowSkeleton } from '../components/Skeleton';
 import { Link } from 'react-router-dom';
 import { STATUS_COLORS } from '../constants/reportStatus';
+import FormInput from '../components/FormInput';
+import Button from '../components/Button';
 
 const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3000';
 
@@ -130,40 +132,31 @@ const ProfilePage = () => {
           <form onSubmit={handleSaveProfile} style={s.form}>
             <div style={s.fieldGroup}>
               <label style={s.label}>Correo electrónico</label>
-              <div style={{ ...s.inputWrap, background: 'var(--c-bg)' }}>
-                <Mail size={16} strokeWidth={1.8} color="var(--c-text-3)" style={{ flexShrink: 0 }} />
-                <input value={user?.correo ?? ''} disabled style={{ ...s.input, color: 'var(--c-text-3)' }} />
-              </div>
-              <span style={s.hint}>El correo no se puede modificar</span>
+              <FormInput
+                icon={Mail}
+                name="correo-display"
+                value={user?.correo ?? ''}
+                disabled
+                hint="El correo no se puede modificar"
+              />
             </div>
             <div style={s.row}>
-              <div style={s.fieldGroup}>
-                <label style={s.label}>Nombre</label>
-                <div style={s.inputWrap}>
-                  <User size={16} strokeWidth={1.8} color="var(--c-text-3)" style={{ flexShrink: 0 }} />
-                  <input name="nombre" value={form.nombre} onChange={handleFormChange} placeholder="Tu nombre" style={s.input} />
-                </div>
-              </div>
-              <div style={s.fieldGroup}>
-                <label style={s.label}>Apellido</label>
-                <div style={s.inputWrap}>
-                  <User size={16} strokeWidth={1.8} color="var(--c-text-3)" style={{ flexShrink: 0 }} />
-                  <input name="apellido" value={form.apellido} onChange={handleFormChange} placeholder="Tu apellido" style={s.input} />
-                </div>
-              </div>
+              <FormInput icon={User} label="Nombre"   name="nombre"   value={form.nombre}   onChange={handleFormChange} placeholder="Tu nombre" />
+              <FormInput icon={User} label="Apellido" name="apellido" value={form.apellido} onChange={handleFormChange} placeholder="Tu apellido" />
             </div>
-            <div style={s.fieldGroup}>
-              <label style={s.label}>Teléfono <span style={s.optional}>(opcional)</span></label>
-              <div style={s.inputWrap}>
-                <Phone size={16} strokeWidth={1.8} color="var(--c-text-3)" style={{ flexShrink: 0 }} />
-                <input name="telefono" value={form.telefono} onChange={handleFormChange} placeholder="+57 300 000 0000" style={s.input} />
-              </div>
-            </div>
+            <FormInput
+              icon={Phone}
+              label="Teléfono"
+              name="telefono"
+              value={form.telefono}
+              onChange={handleFormChange}
+              placeholder="+57 300 000 0000"
+              hint="Opcional"
+            />
             {formErr && <p style={s.errorBox}>{formErr}</p>}
-            <button type="submit" disabled={saving} style={{ ...s.btn, opacity: saving ? 0.7 : 1 }}>
-              <Save size={15} strokeWidth={2} />
-              {saving ? 'Guardando...' : 'Guardar cambios'}
-            </button>
+            <Button type="submit" loading={saving} fullWidth>
+              <Save size={15} strokeWidth={2} /> Guardar cambios
+            </Button>
           </form>
         </div>
 
@@ -177,30 +170,32 @@ const ProfilePage = () => {
               { name: 'nueva',     label: 'Nueva contraseña',     key: 'nueva'     },
               { name: 'confirmar', label: 'Confirmar contraseña', key: 'confirmar' },
             ].map(({ name, label, key }) => (
-              <div key={name} style={s.fieldGroup}>
-                <label style={s.label}>{label}</label>
-                <div style={s.inputWrap}>
-                  <Lock size={16} strokeWidth={1.8} color="var(--c-text-3)" style={{ flexShrink: 0 }} />
-                  <input
-                    name={name}
-                    type={showPwd[key] ? 'text' : 'password'}
-                    value={pwd[name]}
-                    onChange={handlePwdChange}
-                    placeholder="••••••••"
-                    style={s.input}
-                    autoComplete="new-password"
-                  />
+              <FormInput
+                key={name}
+                icon={Lock}
+                label={label}
+                name={name}
+                type={showPwd[key] ? 'text' : 'password'}
+                value={pwd[name]}
+                onChange={handlePwdChange}
+                placeholder="••••••••"
+                autoComplete="new-password"
+                right={
                   <button type="button" onClick={() => setShowPwd((p) => ({ ...p, [key]: !p[key] }))} style={s.eyeBtn}>
                     {showPwd[key] ? <EyeOff size={15} color="var(--c-text-3)" /> : <Eye size={15} color="var(--c-text-3)" />}
                   </button>
-                </div>
-              </div>
+                }
+              />
             ))}
             {pwdErr && <p style={s.errorBox}>{pwdErr}</p>}
-            <button type="submit" disabled={savingPwd || !pwd.actual || !pwd.nueva || !pwd.confirmar} style={{ ...s.btn, opacity: (savingPwd || !pwd.actual || !pwd.nueva || !pwd.confirmar) ? 0.6 : 1 }}>
-              <Lock size={15} strokeWidth={2} />
-              {savingPwd ? 'Actualizando...' : 'Cambiar contraseña'}
-            </button>
+            <Button
+              type="submit"
+              loading={savingPwd}
+              disabled={!pwd.actual || !pwd.nueva || !pwd.confirmar}
+              fullWidth
+            >
+              <Lock size={15} strokeWidth={2} /> Cambiar contraseña
+            </Button>
           </form>
         </div>
 

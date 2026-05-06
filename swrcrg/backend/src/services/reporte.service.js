@@ -19,20 +19,84 @@ const crear = async ({ titulo, descripcion, direccion_referencia, latitud, longi
   return Reporte.create({ titulo, descripcion, direccion_referencia, latitud, longitud, usuario_id, estado_id: estado.id, categoria_id });
 };
 
-const listar = async ({ incluirRechazados = false, sortBy = 'fecha' } = {}) => {
-  const whereEstado = incluirRechazados ? {} : await (async () => {
+const listar = async ({
+  incluirRechazados = false,
+  sortBy     = 'fecha',
+  page       = 1,
+  limit      = 10,
+  search     = '',
+  estado     = '',
+  categoria  = '',
+  fechaDesde = '',
+  fechaHasta = '',
+} = {}) => {
+  const where = {};
+
+  // Excluir rechazados si no es admin
+  if (!incluirRechazados) {
     const rechazado = await EstadoReporte.findOne({ where: { nombre: 'rechazado' } });
-    return rechazado ? { estado_id: { [Op.ne]: rechazado.id } } : {};
-  })();
+    if (rechazado) where.estado_id = { [Op.ne]: rechazado.id };
+  }
+
+  // Filtro por estado
+  if (estado) {
+    const estadoObj = await EstadoReporte.findOne({ where: { nombre: estado } });
+    if (estadoObj) where.estado_id = estadoObj.id;
+  }
+
+  // Filtro por categoría
+  if (categoria) where.categoria_id = categoria;
+
+  // Filtro por texto (título o descripción)
+  if (search) {
+    where[Op.or] = [
+      { titulo:      { [Op.iLike]: `%${search}%` } },
+      { descripcion: { [Op.iLike]: `%${search}%` } },
+      { direccion_referencia: { [Op.iLike]: `%${search}%` } },
+    ];
+  }
+
+  // Filtro por rango de fechas
+  if (fechaDesde || fechaHasta) {
+    where.fecha_reporte = {};
+    if (fechaDesde) where.fecha_reporte[Op.gte] = new Date(fechaDesde + 'T00:00:00');
+    if (fechaHasta) where.fecha_reporte[Op.lte] = new Date(fechaHasta + 'T23:59:59');
+  }
 
   const order = sortBy === 'votos'
     ? [['votos', 'DESC'], ['fecha_reporte', 'DESC']]
     : [['fecha_reporte', 'DESC']];
 
-  return Reporte.findAll({
-    where: whereEstado,
+  const offset = (Math.max(1, page) - 1) * limit;
+
+  const { count, rows } = await Reporte.findAndCountAll({
+    where,
     include: INCLUDE_BASE(),
     order,
+    limit,
+    offset,
+    distinct: true,
+  });
+
+  return {
+    reportes: rows,
+    total:    count,
+    page:     Number(page),
+    totalPages: Math.ceil(count / limit),
+  };
+};
+
+// Versión sin paginación para uso interno (exportar, estadísticas, etc.)
+const listarTodos = async ({ incluirRechazados = false } = {}) => {
+  const where = {};
+  if (!incluirRechazados) {
+    const rechazado = await EstadoReporte.findOne({ where: { nombre: 'rechazado' } });
+    if (rechazado) where.estado_id = { [Op.ne]: rechazado.id };
+  }
+  return Reporte.findAll({
+    where,
+    include: INCLUDE_BASE(),
+    order: [['fecha_reporte', 'DESC']],
   });
 };
 
@@ -248,4 +312,4 @@ const asignar = async (reporte_id, funcionario_id) => {
   });
 };
 
-module.exports = { crear, listar, listarPorCategoria, obtenerPorId, obtenerPorUsuario, cambiarEstado, reenviarParaRevision, agregarImagen, eliminarImagen, editar, eliminar, votar, buscarCercanos, reportarContenido, asignar };
+module.exports = { crear, listar, listarTodos, listarPorCategoria, obtenerPorId, obtenerPorUsuario, cambiarEstado, reenviarParaRevision, agregarImagen, eliminarImagen, editar, eliminar, votar, buscarCercanos, reportarContenido, asignar };
